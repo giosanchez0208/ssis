@@ -1,33 +1,22 @@
-from flask import Flask, url_for
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
-# Main page with hyperlinks to other pages
 @app.route('/')
 def home():
-    return f'''
-        <h1>Welcome to the Flask App!</h1>
-        <ul>
-            <li><a href="{url_for('about')}">About Page</a></li>
-            <li><a href="{url_for('contact')}">Contact Page</a></li>
-            <li><a href="{url_for('services')}">Services Page</a></li>
-        </ul>
-    '''
+    return render_template('home.html')
 
-# About page
-@app.route('/about')
-def about():
-    return '<h1>About Us</h1><p>This is the about page.</p>'
+@app.route('/students')
+def students():
+    return render_template('students.html')
 
-# Contact page
-@app.route('/contact')
-def contact():
-    return '<h1>Contact Us</h1><p>This is the contact page.</p>'
+@app.route('/programs')
+def courses():
+    return render_template('programs.html')
 
-# Services page
-@app.route('/services')
-def services():
-    return '<h1>Our Services</h1><p>This is the services page.</p>'
+@app.route('/colleges')
+def colleges():
+    return render_template('colleges.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
