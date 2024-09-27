@@ -1,0 +1,34 @@
+.fs-0 {
+    font-size: 4rem;
+}
+
+.fs-7 {
+    font-size: 0.8rem;
+}
+
+.bg-gray {
+    background-color: #f0f2f5; /* Adjust values for desired shade */
+}
+
+@media (min-width: 62em) {
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+    
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .container {
+        flex: 1; /* This allows the container to take up available space */
+    }
+    
+    footer {
+        /* Keeping your existing styles */
+        position: relative; /* Remove fixed positioning */
+        width: 100%;
+    }
+    
+}
