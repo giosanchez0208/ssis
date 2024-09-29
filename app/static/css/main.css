@@ -10,6 +10,71 @@
     background-color: #f0f2f5; /* Adjust values for desired shade */
 }
 
+.form-floating > label {
+    padding: 1rem 0.75rem;
+    color: var(--bs-primary);
+}
+.form-floating > .form-control {
+    padding: 1rem 0.75rem;
+    border-color: var(--bs-primary);
+}
+.form-floating > .form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    opacity: 1;
+    color: var(--bs-primary);
+    transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
+}
+.form-floating > .form-control:focus ~ label::after,
+.form-floating > .form-control:not(:placeholder-shown) ~ label::after {
+    position: absolute;
+    top: 1rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 1.5625rem;
+    content: "";
+    background-color: white;
+    z-index: -1;
+}
+.form-floating > .form-control::placeholder {
+    color: transparent;
+}
+.form-floating > .form-control:not(:placeholder-shown) {
+    color: var(--bs-body-color);
+}
+
+.nav__btn button:hover {
+    background: #f0f2f5 !important;
+}
+.nav__btn button:hover i {
+    color: #0d6efd !important;
+}
+.nav__btn button:hover span {
+    color: #0d6efd !important;
+}
+.nav__btn-active i {
+    color: #0d6efd !important;
+}
+.nav__btn-active span {
+    color: #0d6efd !important; /* Add this line for the text color */
+}
+.nav__btn-active {
+    position: relative; 
+}
+.nav__btn-active:before {
+    content: '';
+    position: absolute; 
+    bottom: -4.5px;
+    left: 0;
+    transform: translateY(4.5px);
+    width: 100%;
+    height: 3px;
+    border-bottom: 3px solid #0d6efd;
+}
+
 @media (min-width: 62em) {
     html, body {
         height: 100%;
