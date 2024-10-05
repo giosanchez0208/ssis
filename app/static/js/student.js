@@ -6,18 +6,21 @@ $(document).ready(function() {
             { orderable: false, targets: [-1] }
         ],
         initComplete: function(settings, json) {
-            $('.dataTables_filter input[name="search"]')
+            $('.dataTables_filter input')
+                .filter(function() {
+                    return this.name === 'search';
+                })
                 .attr('placeholder', 'Search...');
         }
     });
 
-    // Delete Modal Logic
+    // Delete modal logic
     $('#deleteModal').on('show.bs.modal', function(event) {
-        const button = $(event.relatedTarget);
-        const studentName = button.data('student-name');
-        const studentId = button.data('id');
-        const modal = $(this);
+        var button = $(event.relatedTarget);
+        var studentName = button.data('student-name');
+        var studentId = button.data('id');
         
+        var modal = $(this);
         modal.find('#studentName').text(studentName);
         modal.find('#studentId').text(studentId);
         
@@ -26,94 +29,94 @@ $(document).ready(function() {
         });
     });
 
-    // Custom Gender Field Logic
+    // Show/hide custom gender field
     const customRadio = document.getElementById('custom');
     const customGenderField = document.getElementById('customGenderField');
 
-    customRadio.addEventListener('change', function() {
+    customRadio.addEventListener('change', function () {
         customGenderField.style.display = this.checked ? 'block' : 'none';
     });
 
     document.querySelectorAll('input[name="gender"]').forEach(radio => {
-        radio.addEventListener('change', function() {
+        radio.addEventListener('change', function () {
             if (this.id !== 'custom') {
                 customGenderField.style.display = 'none';
             }
         });
     });
 
-    // ID Number Input Mask and Validation
+    // Input mask for ID number
     $('#idNumber').inputmask("9999-9999", {
         placeholder: "YYYY-NNNN",
         showMaskOnHover: false,
-        onIncomplete: function() {
+        onIncomplete: function () {
             $(this).val("");
-            enableSubmitButton(false);
+            $('#submitBtn').prop('disabled', true);
         }
     });
 
-    const idInput = $('#idNumber');
-    const submitBtn = $('#submitBtn');
-    let isValidId = false;
+    // Validate ID number and control submit button state
+    validateForm();
 
-    idInput.on('input blur', function() {
-        validateIdNumber(this.value);
-    });
+    function validateForm() {
+        const submitBtn = document.getElementById('submitBtn');
+        const idInput = document.getElementById('idNumber');
+        const firstNameInput = document.getElementById('firstName');
+        const lastNameInput = document.getElementById('lastName');
+        const yearInput = document.getElementById('year');
+        const genderInputs = document.querySelectorAll('input[name="gender"]');
+        let isValidId = false;
 
-    idInput.on('blur', function() {
-        const fullId = this.value;
-        fetch('/check_id', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id_num: fullId }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            isValidId = !data.exists;
-            document.getElementById('idError').style.display = data.exists ? 'block' : 'none';
-            enableSubmitButton(isValidId);
+        function checkFormValidity() {
+            const isFirstNameFilled = firstNameInput.value.trim() !== '';
+            const isLastNameFilled = lastNameInput.value.trim() !== '';
+            const isYearSelected = yearInput.value !== '';
+            const isGenderSelected = Array.from(genderInputs).some(input => input.checked);
+
+            // Enable the button if all conditions are met
+            submitBtn.disabled = !(isValidId && isFirstNameFilled && isLastNameFilled && isYearSelected && isGenderSelected);
+        }
+
+        // ID validation on blur
+        idInput.addEventListener('blur', function () {
+            const fullId = this.value;
+            fetch('/check_id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id_num: fullId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                isValidId = !data.exists;
+                document.getElementById('idError').style.display = data.exists ? 'block' : 'none';
+                checkFormValidity();
+            });
         });
-    });
 
-    function validateIdNumber(id) {
-        const regex = /^\d{4}-\d{4}$/;
-        enableSubmitButton(regex.test(id) && isValidId);
+        // Add input listeners to recheck form on changes
+        firstNameInput.addEventListener('input', checkFormValidity);
+        lastNameInput.addEventListener('input', checkFormValidity);
+        yearInput.addEventListener('change', checkFormValidity);
+        genderInputs.forEach(input => input.addEventListener('change', checkFormValidity));
+
+        // ID number format validation on input
+        idInput.addEventListener('input', function () {
+            const value = idInput.value;
+            const isFormatValid = /^\d{4}-\d{4}$/.test(value);
+            isValidId = isFormatValid;
+            checkFormValidity();
+        });
+
+        // Initial check in case of any pre-filled values
+        checkFormValidity();
     }
 
-    // Validate Form
-    const firstNameInput = document.getElementById('firstName');
-    const lastNameInput = document.getElementById('lastName');
-    const yearInput = document.getElementById('year');
-    const genderInputs = document.querySelectorAll('input[name="gender"]');
-
-    function enableSubmitButton(enable) {
-        submitBtn.prop('disabled', !enable);
-    }
-
-    function checkFormValidity() {
-        const isFirstNameFilled = firstNameInput.value.trim() !== '';
-        const isLastNameFilled = lastNameInput.value.trim() !== '';
-        const isYearSelected = yearInput.value !== '';
-        const isGenderSelected = Array.from(genderInputs).some(input => input.checked);
-        
-        enableSubmitButton(isValidId && isFirstNameFilled && isLastNameFilled && isYearSelected && isGenderSelected);
-    }
-
-    // Add input listeners
-    [firstNameInput, lastNameInput, yearInput].forEach(input => {
-        input.addEventListener('input', checkFormValidity);
-    });
-    genderInputs.forEach(input => input.addEventListener('change', checkFormValidity));
-
-    // Initial check in case of any pre-filled values
-    checkFormValidity();
-
-    // Edit Modal Logic
+    // Handle edit modal logic
     const editModal = document.getElementById('editModal');
 
-    editModal.addEventListener('show.bs.modal', function(event) {
+    editModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const studentId = button.getAttribute('data-id');
 
@@ -149,7 +152,7 @@ $(document).ready(function() {
     });
 
     const editForm = document.getElementById('editForm');
-    editForm.addEventListener('submit', function(e) {
+    editForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
         const studentId = document.getElementById('editIdNumber').value;
@@ -176,7 +179,7 @@ $(document).ready(function() {
 
     // Show/hide custom gender field in edit form
     document.querySelectorAll('input[name="gender"]').forEach(radio => {
-        radio.addEventListener('change', function() {
+        radio.addEventListener('change', function () {
             const customGenderField = document.getElementById('editCustomGenderField');
             const customGenderInput = document.getElementById('editCustomGender');
             if (this.id === 'editCustom') {
