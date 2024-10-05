@@ -14,6 +14,25 @@ $(document).ready(function() {
         }
     });
 
+    // Fetch programs and populate dropdown
+    fetch('/get_programs') // Adjust this URL to your actual endpoint
+        .then(response => response.json())
+        .then(programs => {
+            programs.sort((a, b) => a.course_name.localeCompare(b.course_name));
+            const courseDropdown = document.getElementById("course");
+            courseDropdown.innerHTML = ""; // Clear existing options
+
+            programs.forEach(program => {
+                const option = document.createElement("option");
+                option.value = program.course_code;
+                option.textContent = `${program.course_code} - ${program.course_name}`; // Format changed
+                courseDropdown.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching programs:', error);
+        });
+
     // Delete modal logic
     $('#deleteModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget);
