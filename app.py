@@ -27,10 +27,7 @@ import os
 @app.route('/list_students')
 def list_students():
     try:
-        # Query all students from the database
         students = StudentModel.query.all()
-
-        # Check if there are any students in the database
         if not students:
             return "No students found in the database."
 

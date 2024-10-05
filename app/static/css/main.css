@@ -46,6 +46,7 @@
     color: var(--bs-body-color);
 }
 
+
 .nav__btn button:hover {
     background: #f0f2f5 !important;
 }
@@ -59,7 +60,7 @@
     color: #0d6efd !important;
 }
 .nav__btn-active span {
-    color: #0d6efd !important; /* Add this line for the text color */
+    color: #0d6efd !important;   
 }
 .nav__btn-active {
     position: relative; 
@@ -96,4 +97,11 @@
         width: 100%;
     }
     
+}
+
+td.editor-edit button,
+td.editor-delete button {
+    background: transparent;
+    border: none;
+    color: inherit;
 }
