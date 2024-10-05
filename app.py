@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect
-from models import db, StudentModel
+from flask import Flask, render_template, request, redirect, jsonify
+from models import db, StudentModel, ProgramModel
+from sqlalchemy.exc import IntegrityError
 import os
 
 # Config
@@ -13,50 +14,61 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-    
-def create():
-    if request.method == 'GET':
-        return render_template('')
-# Database
-
-
 
 # Routes
-import os
-
-@app.route('/list_students')
-def list_students():
-    try:
-        students = StudentModel.query.all()
-        if not students:
-            return "No students found in the database."
-
-        # Generate a response string with all student details
-        student_list = ""
-        for student in students:
-            student_list += f"ID: {student.id_num}, Name: {student.first_name} {student.last_name}, " \
-                            f"Gender: {student.gender}, Year Level: {student.year_level}, Course: {student.course}<br>"
-
-        return student_list
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-
-
-        # Add the new student to the session and commit to the database
-        db.session.add(new_student)
-        db.session.commit()
-
-        return f"Inserted student: {new_student.first_name} {new_student.last_name} ({new_student.id_num})"
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
 
 @app.route('/')
 def home():
     return render_template('home.html')
 
-@app.route('/students')
+@app.route('/students', methods=['GET', 'POST'])
 def students():
-    return render_template('students.html')
+    if request.method == 'POST':
+        try:
+            id_num = f"{request.form['idPart1']}-{request.form['idPart2']}"
+            first_name = request.form['firstName']
+            last_name = request.form['lastName']
+            course = request.form.get('course', None)
+            year_level = request.form['year']
+            gender = request.form['gender']
+            
+            if gender == "Custom":
+                custom_gender = request.form.get('customGender', None)
+                if custom_gender:
+                    gender = custom_gender
+
+            new_student = StudentModel(
+                id_num=id_num,
+                first_name=first_name,
+                last_name=last_name,
+                course=course,
+                gender=gender,
+                year_level=year_level
+            )
+
+            db.session.add(new_student)
+            db.session.commit()
+
+            return redirect('/students')
+        
+        except IntegrityError:
+            db.session.rollback() 
+            all_students = StudentModel.query.all()
+            all_programs = ProgramModel.query.all()
+            return render_template('students.html', 
+                                   students=all_students,
+                                   programs=all_programs,
+                                   error_message="ID Number already exists.")
+
+    all_students = StudentModel.query.all()
+    all_programs = ProgramModel.query.all()
+    return render_template('students.html', students=all_students, programs=all_programs)
+
+@app.route('/check_id', methods=['POST'])
+def check_id():
+    id_num = request.json['id_num']
+    exists = StudentModel.query.filter_by(id_num=id_num).first() is not None
+    return jsonify({'exists': exists})
 
 @app.route('/colleges')
 def colleges():

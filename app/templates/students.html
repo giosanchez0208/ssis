@@ -25,15 +25,30 @@
         </div>
         <table id="student_table" class="table table-striped" style="width:100%">
             <thead>
-                <th>ID Number</th>
-                <th>Full Name</th>
-                <th>Course</th>
-                <th>Gender</th>
-                <th>Year Level</th>
-                <th></th> <!--edit-->
-                <th></th> <!--delete-->
+                <tr>
+                    <th>ID Number</th>
+                    <th>Full Name</th>
+                    <th>Course</th>
+                    <th>Gender</th>
+                    <th>Year Level</th>
+                    <th></th> <!-- Edit -->
+                    <th></th> <!-- Delete -->
+                </tr>
             </thead>
-        </table>    
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.id_num }}</td>
+                    <td>{{ student.first_name }} {{ student.last_name }}</td>
+                    <td>{{ student.course }}</td>
+                    <td>{{ student.gender }}</td>
+                    <td>{{ student.year_level }}</td>
+                    <td><a href="/edit/{{ student.id_num }}" class="btn btn-warning btn-sm">Edit</a></td>
+                    <td><a href="/delete/{{ student.id_num }}" class="btn btn-danger btn-sm">Delete</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>          
     </div>
 
 
@@ -47,16 +62,19 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form>
+                    <form action="/students" method="POST">
                         <!-- ID Number -->
-                        <div class="mb-3">
-                            <label for="idNumber" class="form-label">ID Number</label>
-                            <div class="d-flex align-items-center">
-                                <input type="text" name="idPart1" class="form-control" id="idPart1" maxlength="4" required pattern="\d{4}" style="width: 80px; margin-right: 5px;">
-                                <span>-</span>
-                                <input type="text" name="idPart2" class="form-control" id="idPart2" maxlength="4" required pattern="\d{4}" style="width: 80px; margin-left: 5px;">
-                            </div>
+                    <<div class="mb-3">
+                        <label for="idNumber" class="form-label">ID Number</label>
+                        <div class="d-flex align-items-center">
+                            <input type="text" name="idPart1" class="form-control" id="idPart1" maxlength="4" required pattern="\d{4}" style="width: 80px; margin-right: 5px;">
+                            <span>-</span>
+                            <input type="text" name="idPart2" class="form-control" id="idPart2" maxlength="4" required pattern="\d{4}" style="width: 80px; margin-left: 5px;">
                         </div>
+                        <!-- Error message (hidden by default) -->
+                        <small id="idError" class="text-danger" style="display: none;">ID Number already exists.</small>
+                    </div>
+
                         
                         <!-- First Name and Last Name (side by side) -->
                         <div class="d-flex mb-3">
@@ -73,9 +91,11 @@
                         <!-- Course Dropdown -->
                         <div class="mb-3">
                             <label for="course" class="form-label">Course</label>
-                            <select name="course" class="form-select" id="course" required>
+                            <select name="course" class="form-select" id="course">
                                 <option value="">Select Course</option>
-                                <option value="Course1">CCS</option>
+                                {% for program in programs %}
+                                    <option value="{{ program.course_code }}">{{ program.course_code }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         
@@ -190,6 +210,29 @@
             });
         });
     </script>
+    <script>
+        document.getElementById('idPart2').addEventListener('blur', function() {
+            var idPart1 = document.getElementById('idPart1').value;
+            var idPart2 = this.value;
+            var fullId = idPart1 + '-' + idPart2;
+            
+            fetch('/check_id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({id_num: fullId}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    document.getElementById('idError').style.display = 'block';
+                } else {
+                    document.getElementById('idError').style.display = 'none';
+                }
+            });
+        });
+        </script>
 </body>
 
 </html>

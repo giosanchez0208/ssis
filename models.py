@@ -21,3 +21,17 @@ class StudentModel(db.Model):
         
         def __repr__(self):
             return f"{self.first_name}:{self.last_name}"
+class ProgramModel(db.Model):
+    __tablename__ = "programs"
+
+    course_code = db.Column(db.String(16), primary_key=True)  
+    college = db.Column(db.String(16), nullable=False)  
+    course_name = db.Column(db.Text, nullable=False) 
+
+    def __init__(self, course_code, college, course_name):
+        self.course_code = course_code
+        self.college = college
+        self.course_name = course_name
+
+        def __repr__(self):
+            return f"{self.course_code} - {self.course_name}"
