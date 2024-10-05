@@ -1,132 +1,119 @@
 $(document).ready(function() {
+    // Initialize DataTable
     $('#student_table').DataTable({
         columnDefs: [
             { orderable: false, targets: [-2] },
             { orderable: false, targets: [-1] }
         ],
         initComplete: function(settings, json) {
-            $('.dataTables_filter input')
-                .filter(function() {
-                    return this.name === 'search';
-                })
+            $('.dataTables_filter input[name="search"]')
                 .attr('placeholder', 'Search...');
         }
     });
-});
 
-
-// Show the custom gender field if "Custom" is selected
-const customRadio = document.getElementById('custom');
-const customGenderField = document.getElementById('customGenderField');
-
-customRadio.addEventListener('change', function () {
-    if (this.checked) {
-        customGenderField.style.display = 'block';
-    }
-});
-
-document.querySelectorAll('input[name="gender"]').forEach(radio => {
-    radio.addEventListener('change', function () {
-        if (this.id !== 'custom') {
-            customGenderField.style.display = 'none';
-        }
+    // Delete Modal Logic
+    $('#deleteModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const studentName = button.data('student-name');
+        const studentId = button.data('id');
+        const modal = $(this);
+        
+        modal.find('#studentName').text(studentName);
+        modal.find('#studentId').text(studentId);
+        
+        modal.find('#confirmDeleteBtn').off('click').on('click', function() {
+            window.location.href = `/delete/${studentId}`;
+        });
     });
-});
 
-// Apply the input mask and handle ID check
-$(document).ready(function () {
+    // Custom Gender Field Logic
+    const customRadio = document.getElementById('custom');
+    const customGenderField = document.getElementById('customGenderField');
+
+    customRadio.addEventListener('change', function() {
+        customGenderField.style.display = this.checked ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('input[name="gender"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.id !== 'custom') {
+                customGenderField.style.display = 'none';
+            }
+        });
+    });
+
+    // ID Number Input Mask and Validation
     $('#idNumber').inputmask("9999-9999", {
-        placeholder: "####-####",
+        placeholder: "YYYY-NNNN",
         showMaskOnHover: false,
-        onIncomplete: function () {
+        onIncomplete: function() {
             $(this).val("");
+            enableSubmitButton(false);
         }
     });
 
-    document.getElementById('idNumber').addEventListener('blur', function () {
-        var fullId = this.value;
+    const idInput = $('#idNumber');
+    const submitBtn = $('#submitBtn');
+    let isValidId = false;
 
-        fetch('/check_id', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id_num: fullId
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    document.getElementById('idError').style.display = 'block';
-                } else {
-                    document.getElementById('idError').style.display = 'none';
-                }
-            });
+    idInput.on('input blur', function() {
+        validateIdNumber(this.value);
     });
-});
 
-// Validate form and enable/disable submit button
-document.addEventListener('DOMContentLoaded', function () {
-    const submitBtn = document.getElementById('submitBtn');
-    const idInput = document.getElementById('idNumber');
+    idInput.on('blur', function() {
+        const fullId = this.value;
+        fetch('/check_id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id_num: fullId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            isValidId = !data.exists;
+            document.getElementById('idError').style.display = data.exists ? 'block' : 'none';
+            enableSubmitButton(isValidId);
+        });
+    });
+
+    function validateIdNumber(id) {
+        const regex = /^\d{4}-\d{4}$/;
+        enableSubmitButton(regex.test(id) && isValidId);
+    }
+
+    // Validate Form
     const firstNameInput = document.getElementById('firstName');
     const lastNameInput = document.getElementById('lastName');
     const yearInput = document.getElementById('year');
     const genderInputs = document.querySelectorAll('input[name="gender"]');
-    let isValidId = false; // Tracks if ID is valid
 
-    // Helper function to check if all required fields are filled
+    function enableSubmitButton(enable) {
+        submitBtn.prop('disabled', !enable);
+    }
+
     function checkFormValidity() {
         const isFirstNameFilled = firstNameInput.value.trim() !== '';
         const isLastNameFilled = lastNameInput.value.trim() !== '';
         const isYearSelected = yearInput.value !== '';
         const isGenderSelected = Array.from(genderInputs).some(input => input.checked);
-
-        // Enable the button if all conditions are met
-        submitBtn.disabled = !(isValidId && isFirstNameFilled && isLastNameFilled && isYearSelected && isGenderSelected);
+        
+        enableSubmitButton(isValidId && isFirstNameFilled && isLastNameFilled && isYearSelected && isGenderSelected);
     }
 
-    // ID validation (checking format and if it's unique)
-    idInput.addEventListener('blur', function () {
-        const fullId = this.value;
-        fetch('/check_id', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id_num: fullId
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.exists) {
-                    document.getElementById('idError').style.display = 'block';
-                    isValidId = false;
-                } else {
-                    document.getElementById('idError').style.display = 'none';
-                    isValidId = true;
-                }
-                checkFormValidity(); // Recheck form after ID validation
-            });
+    // Add input listeners
+    [firstNameInput, lastNameInput, yearInput].forEach(input => {
+        input.addEventListener('input', checkFormValidity);
     });
-
-    // Add input listeners to recheck form on changes
-    firstNameInput.addEventListener('input', checkFormValidity);
-    lastNameInput.addEventListener('input', checkFormValidity);
-    yearInput.addEventListener('change', checkFormValidity);
     genderInputs.forEach(input => input.addEventListener('change', checkFormValidity));
 
     // Initial check in case of any pre-filled values
     checkFormValidity();
-});
 
-// Handle edit modal logic
-document.addEventListener('DOMContentLoaded', function () {
+    // Edit Modal Logic
     const editModal = document.getElementById('editModal');
 
-    editModal.addEventListener('show.bs.modal', function (event) {
+    editModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         const studentId = button.getAttribute('data-id');
 
@@ -162,34 +149,34 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const editForm = document.getElementById('editForm');
-    editForm.addEventListener('submit', function (e) {
+    editForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         const studentId = document.getElementById('editIdNumber').value;
 
         fetch(`/edit/${studentId}`, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const modal = bootstrap.Modal.getInstance(editModal);
-                    modal.hide();
-                    location.reload();
-                } else {
-                    alert(data.message || 'An error occurred while updating the student.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while updating the student.');
-            });
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(editModal);
+                modal.hide();
+                location.reload();
+            } else {
+                alert(data.message || 'An error occurred while updating the student.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the student.');
+        });
     });
 
     // Show/hide custom gender field in edit form
     document.querySelectorAll('input[name="gender"]').forEach(radio => {
-        radio.addEventListener('change', function () {
+        radio.addEventListener('change', function() {
             const customGenderField = document.getElementById('editCustomGenderField');
             const customGenderInput = document.getElementById('editCustomGender');
             if (this.id === 'editCustom') {
