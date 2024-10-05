@@ -110,10 +110,10 @@
                         <!-- Course Dropdown -->
                         <div class="mb-3">
                             <label for="course" class="form-label">Course</label>
-                            <select name="course" class="form-select" id="course">
+                            <select name="course" class="form-select" id="course" required>
                                 <option style="color: gray;" value="">Not enrolled in any program</option>
                                 {% for program in programs %}
-                                <option value="{{ program.course_code }}">{{ program.course_code }}</option>
+                                <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
