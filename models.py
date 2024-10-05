@@ -35,3 +35,16 @@ class ProgramModel(db.Model):
 
         def __repr__(self):
             return f"{self.course_code} - {self.course_name}"
+        
+class CollegeModel(db.Model):
+    __tablename__ = "colleges"
+
+    college_code = db.Column(db.String(16), primary_key=True)  # Primary key for the college
+    college_name = db.Column(db.Text, nullable=False)  # Name of the college
+
+    def __init__(self, college_code, college_name):
+        self.college_code = college_code
+        self.college_name = college_name
+
+    def __repr__(self):
+        return f"{self.college_code} - {self.college_name}"
