@@ -116,6 +116,11 @@
 
 }
 
+.button-column {
+    width: 30px; /* Set your desired width */
+    text-align: center; /* Center-align the buttons */
+}
+
 .btn {
     background-color: transparent;
     border: none;
@@ -156,4 +161,14 @@
     /* Color for the hashtags */
     opacity: 1;
     /* Ensure visibility */
+}
+
+.hide-on-mobile-view {
+    display: table-cell; /* Default behavior for larger screens */
+}
+
+@media (max-width: 580px) { /* Change the max-width value to your desired breakpoint */
+    .hide-on-mobile-view {
+        display: none; /* Hide the column on screens smaller than 768px */
+    }
 }
