@@ -79,7 +79,48 @@ def students():
     all_students = StudentModel.query.all()
     all_programs = ProgramModel.query.all()
     return render_template('students.html', students=all_students, programs=all_programs)
+from flask import jsonify
+@app.route('/edit/<string:id_num>', methods=['GET', 'POST'])
+def edit(id_num):
+    student = StudentModel.query.get_or_404(id_num)
+    if request.method == 'POST':
+        try:
+            student.first_name = request.form['firstName']
+            student.last_name = request.form['lastName']
+            student.course = request.form['course'] or None  # Set to None if empty string
+            student.year_level = request.form['year']
+            student.gender = request.form['gender']
+            
+            if student.gender == "Custom":
+                custom_gender = request.form.get('customGender')
+                if custom_gender:
+                    student.gender = custom_gender
 
+            db.session.commit()
+            return jsonify({"success": True, "message": "Student updated successfully"})
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating student: {str(e)}")  # Print the error to console
+            return jsonify({"success": False, "message": f"There was an issue updating the student: {str(e)}"})
+    elif request.method == 'GET':
+        return jsonify({
+            'id_num': student.id_num,
+            'first_name': student.first_name,
+            'last_name': student.last_name,
+            'course': student.course,
+            'year_level': student.year_level,
+            'gender': student.gender
+        })
+
+@app.route('/delete/<string:id_num>')
+def delete(id_num):
+    student_to_delete = StudentModel.query.get_or_404(id_num)
+    try:
+        db.session.delete(student_to_delete)
+        db.session.commit()
+        return redirect('/students')
+    except:
+        return "There was a problem deleting that student."
 
 @app.route('/check_id', methods=['POST'])
 def check_id():
