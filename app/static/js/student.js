@@ -1,3 +1,20 @@
+$(document).ready(function() {
+    $('#student_table').DataTable({
+        columnDefs: [
+            { orderable: false, targets: [-2] },
+            { orderable: false, targets: [-1] }
+        ],
+        initComplete: function(settings, json) {
+            $('.dataTables_filter input')
+                .filter(function() {
+                    return this.name === 'search';
+                })
+                .attr('placeholder', 'Search...');
+        }
+    });
+});
+
+
 // Show the custom gender field if "Custom" is selected
 const customRadio = document.getElementById('custom');
 const customGenderField = document.getElementById('customGenderField');

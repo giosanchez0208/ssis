@@ -11,6 +11,8 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" rel="stylesheet">
     <title>Homepage</title>
 </head>
 
@@ -18,81 +20,183 @@
 
     <!-- ========== Main Data Table ========== -->
     <div class="bg-gray p-5 mt-4">
-        <div class="">
-            <div class="container my-3">
-                <h1 class="text-center"> Manage <b>Students</b></h1>
-                <button class="btn btn-primary my-4" data-bs-toggle="modal" data-bs-target="#createModal">Create
-                    Student</button>
+        <div class="container my-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h1>Manage <b>Students</b></h1>
+                    <!-- Removed text-left since default is left aligned -->
+                </div>
+                <div class="col-auto">
+                    <!-- Use col-auto to take up only necessary space -->
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create
+                        Student</button>
+                </div>
             </div>
-            <table id="student_table" class="table table-striped" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>ID Number</th>
-                        <th>Full Name</th>
-                        <th>Course</th>
-                        <th>Gender</th>
-                        <th>Year Level</th>
-                        <th></th> <!-- Edit -->
-                        <th></th> <!-- Delete -->
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td>{{ student.id_num }}</td>
-                        <td>{{ student.first_name }} {{ student.last_name }}</td>
-                        <td>{{ student.course }}</td>
-                        <td>{{ student.gender }}</td>
-                        <td>{{ student.year_level }}</td>
-                        <td><button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
-                                data-bs-target="#editModal" data-id="{{ student.id_num }}">Edit</button></td>
-                        <td><a href="{{ url_for('delete', id_num=student.id_num) }}" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Are you sure you want to delete this student?');">Delete</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
+        <hr />
+        <table id="student_table" class="table table-striped" style="width:100%">
+            <thead>
+                <tr>
+                    <th>ID Number</th>
+                    <th>Full Name</th>
+                    <th>Course</th>
+                    <th>Gender</th>
+                    <th>Year Level</th>
+                    <th></th> <!-- Edit -->
+                    <th></th> <!-- Delete -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.id_num }}</td>
+                    <td><b>{{ student.last_name }}</b>, {{ student.first_name }}</td> 
+                    <td>{{ student.course }}</td>
+                    <td>{{ student.gender }}</td>
+                    <td>{{ student.year_level }}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
+                                data-bs-target="#editModal" data-id="{{ student.id_num }}">
+                            <i class="fas fa-edit p-1"></i> <!-- Edit icon -->
+                        </button>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="window.location.href='{{ url_for('delete', id_num=student.id_num) }}'; return confirm('Are you sure you want to delete this student?');">
+                            <i class="fas fa-trash p-1"></i> <!-- Delete icon -->
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>            
+        </table>
+    </div>
+
+    </div>
 
 
-        <!-- ========== Create Student Modal ========== -->
-        <div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-            aria-labelledby="staticBackdropLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="staticBackdropLabel">Create Student</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="/students" method="POST">
-                            <!-- ID Number -->
-                            <div class="mb-3">
-                                <label for="idNumber" class="form-label">ID Number</label>
-                                <input type="text" name="idNumber" class="form-control" id="idNumber" required
-                                    style="width: 170px;">
-                                <small id="idError" class="text-danger" style="display: none;">ID Number already
-                                    exists.</small>
+    <!-- ========== Create Student Modal ========== -->
+    <div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Create Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/students" method="POST">
+                        <!-- ID Number -->
+                        <div class="mb-3">
+                            <label for="idNumber" class="form-label">ID Number</label>
+                            <input type="text" name="idNumber" class="form-control" id="idNumber" required
+                                style="width: 170px;">
+                            <small id="idError" class="text-danger" style="display: none;">ID Number already
+                                exists.</small>
+                        </div>
+
+
+                        <!-- First Name and Last Name (side by side) -->
+                        <div class="d-flex mb-3">
+                            <div class="me-2" style="flex: 1;">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" name="firstName" class="form-control" id="firstName" required>
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" name="lastName" class="form-control" id="lastName" required>
+                            </div>
+                        </div>
+
+                        <!-- Course Dropdown -->
+                        <div class="mb-3">
+                            <label for="course" class="form-label">Course</label>
+                            <select name="course" class="form-select" id="course">
+                                <option style="color: gray;" value="">Not enrolled in any program</option>
+                                {% for program in programs %}
+                                <option value="{{ program.course_code }}">{{ program.course_code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Year Dropdown -->
+                        <div class="mb-3">
+                            <label for="year" class="form-label">Year</label>
+                            <select name="year" class="form-select" id="year" required>
+                                <option value="">Select Year</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+
+                        <!-- Gender Toggle Button Group -->
+                        <div class="mb-3">
+                            <label class="form-label">Gender</label>
+                            <div class="btn-group d-block" role="group" aria-label="Basic radio toggle button group">
+                                <input type="radio" name="gender" id="male" value="Male" required class="btn-check">
+                                <label class="btn btn-outline-primary" for="male">Male</label>
+
+                                <input type="radio" name="gender" id="female" value="Female" required class="btn-check">
+                                <label class="btn btn-outline-primary" for="female">Female</label>
+
+                                <input type="radio" name="gender" id="custom" value="Custom" required class="btn-check">
+                                <label class="btn btn-outline-primary" for="custom">Custom</label>
                             </div>
 
+                            <!-- Gender Custom Text Field (hidden by default) -->
+                            <div class="mt-2" id="customGenderField" style="display: none;">
+                                <input type="text" class="form-control" placeholder="Gender (Optional)"
+                                    id="customGender" name="customGender">
+                            </div>
+                        </div>
+                        <hr />
+                        <!-- Submit Button -->
+                        <div class="mb-3 text-end">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <form id="editForm">
+                            <!-- ID Number (read-only) -->
+                            <div class="mb-3">
+                                <label for="editIdNumber" class="form-label">ID Number</label>
+                                <input type="text" name="idNumber" class="form-control" id="editIdNumber" readonly
+                                    disabled>
+                            </div>
 
                             <!-- First Name and Last Name (side by side) -->
                             <div class="d-flex mb-3">
                                 <div class="me-2" style="flex: 1;">
-                                    <label for="firstName" class="form-label">First Name</label>
-                                    <input type="text" name="firstName" class="form-control" id="firstName" required>
+                                    <label for="editFirstName" class="form-label">First Name</label>
+                                    <input type="text" name="firstName" class="form-control" id="editFirstName"
+                                        required>
                                 </div>
                                 <div style="flex: 1;">
-                                    <label for="lastName" class="form-label">Last Name</label>
-                                    <input type="text" name="lastName" class="form-control" id="lastName" required>
+                                    <label for="editLastName" class="form-label">Last Name</label>
+                                    <input type="text" name="lastName" class="form-control" id="editLastName" required>
                                 </div>
                             </div>
 
                             <!-- Course Dropdown -->
                             <div class="mb-3">
-                                <label for="course" class="form-label">Course</label>
-                                <select name="course" class="form-select" id="course">
+                                <label for="editCourse" class="form-label">Course</label>
+                                <select name="course" class="form-select" id="editCourse">
                                     <option style="color: gray;" value="">Not enrolled in any program</option>
                                     {% for program in programs %}
                                     <option value="{{ program.course_code }}">{{ program.course_code }}</option>
@@ -102,8 +206,8 @@
 
                             <!-- Year Dropdown -->
                             <div class="mb-3">
-                                <label for="year" class="form-label">Year</label>
-                                <select name="year" class="form-select" id="year" required>
+                                <label for="editYear" class="form-label">Year</label>
+                                <select name="year" class="form-select" id="editYear" required>
                                     <option value="">Select Year</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -117,180 +221,93 @@
                                 <label class="form-label">Gender</label>
                                 <div class="btn-group d-block" role="group"
                                     aria-label="Basic radio toggle button group">
-                                    <input type="radio" name="gender" id="male" value="Male" required class="btn-check">
-                                    <label class="btn btn-outline-primary" for="male">Male</label>
-
-                                    <input type="radio" name="gender" id="female" value="Female" required
+                                    <input type="radio" name="gender" id="editMale" value="Male" required
                                         class="btn-check">
-                                    <label class="btn btn-outline-primary" for="female">Female</label>
+                                    <label class="btn btn-outline-primary" for="editMale">Male</label>
 
-                                    <input type="radio" name="gender" id="custom" value="Custom" required
+                                    <input type="radio" name="gender" id="editFemale" value="Female" required
                                         class="btn-check">
-                                    <label class="btn btn-outline-primary" for="custom">Custom</label>
+                                    <label class="btn btn-outline-primary" for="editFemale">Female</label>
+
+                                    <input type="radio" name="gender" id="editCustom" value="Custom" required
+                                        class="btn-check">
+                                    <label class="btn btn-outline-primary" for="editCustom">Custom</label>
                                 </div>
 
                                 <!-- Gender Custom Text Field (hidden by default) -->
-                                <div class="mt-2" id="customGenderField" style="display: none;">
+                                <div class="mt-2" id="editCustomGenderField" style="display: none;">
                                     <input type="text" class="form-control" placeholder="Gender (Optional)"
-                                        id="customGender" name="customGender">
+                                        id="editCustomGender" name="customGender">
                                 </div>
                             </div>
                             <hr />
                             <!-- Submit Button -->
                             <div class="mb-3 text-end">
-                                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+                                <button type="submit" class="btn btn-primary" id="editSubmitBtn">Update</button>
                             </div>
                         </form>
-
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Edit Student Modal -->
-        <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel">Edit Student</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editForm">
-                            <form id="editForm">
-                                <!-- ID Number (read-only) -->
-                                <div class="mb-3">
-                                    <label for="editIdNumber" class="form-label">ID Number</label>
-                                    <input type="text" name="idNumber" class="form-control" id="editIdNumber" readonly>
-                                </div>
 
-                                <!-- First Name and Last Name (side by side) -->
-                                <div class="d-flex mb-3">
-                                    <div class="me-2" style="flex: 1;">
-                                        <label for="editFirstName" class="form-label">First Name</label>
-                                        <input type="text" name="firstName" class="form-control" id="editFirstName"
-                                            required>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <label for="editLastName" class="form-label">Last Name</label>
-                                        <input type="text" name="lastName" class="form-control" id="editLastName"
-                                            required>
-                                    </div>
-                                </div>
-
-                                <!-- Course Dropdown -->
-                                <div class="mb-3">
-                                    <label for="editCourse" class="form-label">Course</label>
-                                    <select name="course" class="form-select" id="editCourse">
-                                        <option style="color: gray;" value="">Not enrolled in any program</option>
-                                        {% for program in programs %}
-                                        <option value="{{ program.course_code }}">{{ program.course_code }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <!-- Year Dropdown -->
-                                <div class="mb-3">
-                                    <label for="editYear" class="form-label">Year</label>
-                                    <select name="year" class="form-select" id="editYear" required>
-                                        <option value="">Select Year</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                    </select>
-                                </div>
-
-                                <!-- Gender Toggle Button Group -->
-                                <div class="mb-3">
-                                    <label class="form-label">Gender</label>
-                                    <div class="btn-group d-block" role="group"
-                                        aria-label="Basic radio toggle button group">
-                                        <input type="radio" name="gender" id="editMale" value="Male" required
-                                            class="btn-check">
-                                        <label class="btn btn-outline-primary" for="editMale">Male</label>
-
-                                        <input type="radio" name="gender" id="editFemale" value="Female" required
-                                            class="btn-check">
-                                        <label class="btn btn-outline-primary" for="editFemale">Female</label>
-
-                                        <input type="radio" name="gender" id="editCustom" value="Custom" required
-                                            class="btn-check">
-                                        <label class="btn btn-outline-primary" for="editCustom">Custom</label>
-                                    </div>
-
-                                    <!-- Gender Custom Text Field (hidden by default) -->
-                                    <div class="mt-2" id="editCustomGenderField" style="display: none;">
-                                        <input type="text" class="form-control" placeholder="Gender (Optional)"
-                                            id="editCustomGender" name="customGender">
-                                    </div>
-                                </div>
-                                <hr />
-                                <!-- Submit Button -->
-                                <div class="mb-3 text-end">
-                                    <button type="submit" class="btn btn-primary" id="editSubmitBtn">Update</button>
-                                </div>
-                            </form>
-                        </form>
-                    </div>
-                </div>
+    <!-- ========== Appbar ========== -->
+    <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
+        <!-- nav -->
+        <div class="col d-flex align-items-center">
+            <!-- student icon -->
+            <div class="mx-2 nav__btn nav__btn-active">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-person text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Students</span>
+                </button>
+            </div>
+            <!-- course icon -->
+            <div class="mx-2 nav__btn">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-book text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
+                </button>
+            </div>
+            <!-- college icon -->
+            <div class="mx-2 nav__btn">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-building-columns text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
+                </button>
             </div>
         </div>
-
-
-        <!-- ========== Appbar ========== -->
-        <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
-            <!-- nav -->
-            <div class="col d-flex align-items-center">
-                <!-- student icon -->
-                <div class="mx-2 nav__btn nav__btn-active">
-                    <button class="btn d-flex align-items-center px-3">
-                        <i class="fa-solid fa-person text-muted fs-4"></i>
-                        <span class="ms-2 text-muted d-none d-lg-block">Students</span>
-                    </button>
-                </div>
-                <!-- course icon -->
-                <div class="mx-2 nav__btn">
-                    <button class="btn d-flex align-items-center px-3">
-                        <i class="fa-solid fa-book text-muted fs-4"></i>
-                        <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
-                    </button>
-                </div>
-                <!-- college icon -->
-                <div class="mx-2 nav__btn">
-                    <button class="btn d-flex align-items-center px-3">
-                        <i class="fa-solid fa-building-columns text-muted fs-4"></i>
-                        <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
-                    </button>
-                </div>
-            </div>
-            <!-- menus -->
-            <div class="col d-flex align-items-center justify-content-end">
-                <!-- profile -->
-                <img src="#" alt="profile picture" class="rounded-circle me-1"
-                    style="width:38px; height: 38px; object-fit: cover" />
-                <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
-            </div>
-            <!-- main menu -->
-            <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
-                style="width:38px; height:38px; object-fit: cover" id="mainMenu" data-bs-toggle="dropdown"
-                aria-expanded="false" type="button">
-                <i class="fa-solid fa-ellipsis"></i>
-            </div>
-            <!-- main menu dropdown -->
-            <ul class="dropdown-menu">
-                <li class="p-1 mx-2">
-                    <h2>Menu</h2>
-                </li>
-                <li><a class="dropdown-item" href="#">Log out</a></li>
-            </ul>
+        <!-- menus -->
+        <div class="col d-flex align-items-center justify-content-end">
+            <!-- profile -->
+            <img src="#" alt="profile picture" class="rounded-circle me-1"
+                style="width:38px; height: 38px; object-fit: cover" />
+            <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
         </div>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
-        <script src="static/js/main.js"></script>
-        <script src="static/js/student.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- main menu -->
+        <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
+            style="width:38px; height:38px; object-fit: cover" id="mainMenu" data-bs-toggle="dropdown"
+            aria-expanded="false" type="button">
+            <i class="fa-solid fa-ellipsis"></i>
+        </div>
+        <!-- main menu dropdown -->
+        <ul class="dropdown-menu">
+            <li class="p-1 mx-2">
+                <h2>Menu</h2>
+            </li>
+            <li><a class="dropdown-item" href="#">Log out</a></li>
+        </ul>
+    </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
+    <script src="static/js/main.js"></script>
+    <script src="static/js/student.js"></script>
 
 </body>
 

@@ -116,11 +116,34 @@
 
 }
 
-td.editor-edit button,
-td.editor-delete button {
-    background: transparent;
+.btn {
+    background-color: transparent;
     border: none;
-    color: inherit;
+    padding: 0; 
+}
+
+.edit-btn {
+    color: #ffc107; /* Warning color for the icon */
+    background-color: transparent; /* Make background transparent */
+    border: none; /* Remove border */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+.edit-btn:hover {
+    color: white; /* Change icon color to white on hover */
+    background-color: #ffc107; /* Set background to the previous icon color */
+}
+
+.btn-danger {
+    color: #dc3545; /* Danger color for the icon */
+    background-color: transparent; /* Make background transparent */
+    border: none; /* Remove border */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+.btn-danger:hover {
+    color: white; /* Change icon color to white on hover */
+    background-color: #dc3545; /* Set background to the previous icon color */
 }
 
 .input-mask {
