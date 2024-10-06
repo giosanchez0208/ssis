@@ -175,7 +175,7 @@
                 </a>
             </div>
             <!-- college icon -->
-            <div class="mx-2 nav__btn  nav__btn-active">
+            <div class="mx-2 nav__btn nav__btn-active">
                 <a href="{{ url_for('manage_colleges') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-building-columns text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
@@ -185,9 +185,9 @@
         <!-- menus -->
         <div class="col d-flex align-items-center justify-content-end">
             <!-- profile -->
-            <img src="#" alt="profile picture" class="rounded-circle me-1"
+            <img src="{{ session['user']['profile'] }}" alt="profile picture" class="rounded-circle me-1"
                 style="width:38px; height: 38px; object-fit: cover" />
-            <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
+            <p class="m-0 py-2 px-2 d-none d-lg-block">{{ session['user']['name'] }}</p>
         </div>
         <!-- main menu -->
         <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
@@ -200,9 +200,10 @@
             <li class="p-1 mx-2">
                 <h2>Menu</h2>
             </li>
-            <li><a class="dropdown-item" href="{{ url_for('home') }}">Log out</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log out</a></li>
         </ul>
     </div>
+
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>

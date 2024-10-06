@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, redirect, jsonify
 from models import db, StudentModel, ProgramModel, CollegeModel
-from sqlalchemy.exc import IntegrityError
-import os
+from sqlalchemy.exc import IntegrityErrorfrom authlib.integrations.flask_client import OAuth
+from flask import Flask, redirect, url_for, session, render_template
+import os, random, string
 
 # Config
 
@@ -15,11 +16,77 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# Routes
+# OAuth Setup
 
+# OAuth Setup
+oauth = OAuth(app)
+
+# Configure Google OAuth
+# I WENT BACK TO THIS COMMIT AND HID THIS INFORMATION
+
+
+# Google login route
+@app.route('/login/google')
+def google_login():
+    redirect_uri = url_for('authorize_google', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+# Google OAuth callback route
+def generate_nonce(length=16):
+    """Generate a random nonce."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+@app.route('/authorize/google')
+def authorize_google():
+    try:
+        nonce = generate_nonce()  # Generate a nonce
+        session['nonce'] = nonce  # Store the nonce in the session
+        
+        redirect_uri = url_for('authorize_google_callback', _external=True)
+        return google.authorize_redirect(redirect_uri, nonce=nonce)
+
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500  
+
+@app.route('/authorize/google/callback')
+def authorize_google_callback():
+    try:
+        # Fetch the access token
+        token = google.authorize_access_token()
+        if not token:
+            return "Authorization failed", 400  # Handle authorization failure
+
+        # Retrieve the nonce from the session
+        nonce = session.pop('nonce', None)  # Remove it from the session
+
+        # Parse user info using the nonce
+        user_info = google.parse_id_token(token, nonce=nonce)
+
+        # Store user info in the session
+        session['user'] = {
+            'email': user_info.get('email'),
+            'name': user_info.get('name'),
+            'profile': user_info.get('picture')
+        }
+
+        return redirect('/students')  # Redirect to the students page after successful login
+
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500  # Log the error and return a message
+
+
+# Home route
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('home.html', user=session.get('user'))  # Pass user info to the template
+
+# Route to logout
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect('/')
+
+# Routes
 
 ################# STUDENTS #################
 
