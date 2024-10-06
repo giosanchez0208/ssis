@@ -204,24 +204,73 @@ def update_program():
     return jsonify({'success': True})
 
 ################# COLLEGES #################
+
 @app.route('/colleges')
 def colleges():
     all_colleges = CollegeModel.query.all() 
     return render_template('colleges.html', colleges=all_colleges)  
+
 @app.route('/create_college', methods=['POST'])
 def create_college():
-    college_code = request.form.get('collegeCode')
-    college_name = request.form.get('collegeName')
+    data = request.get_json()  # Get the JSON data from the request
+    college_code = data.get('college_code')
+    college_name = data.get('college_name')
+
+    if not college_name:
+        return jsonify({'error': 'College name cannot be empty.'}), 400
+
+    try:
+        new_college = CollegeModel(college_code=college_code, college_name=college_name)
+        db.session.add(new_college)
+        db.session.commit()
+        return jsonify({'success': 'College created successfully.'}), 201
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'College code already exists.'}), 400
+
+@app.route('/update_college', methods=['POST'])
+def update_college():
+    data = request.get_json()
+    original_code = data['original_code']
+    college_code = data['college_code']
+    college_name = data['college_name']
+
+    # Check if the college_code is being changed and if the new code already exists
+    if original_code != college_code:
+        existing_college = CollegeModel.query.filter_by(college_code=college_code).first()
+        if existing_college:
+            return jsonify({'message': 'College code already exists'}), 400
+
+    # Update the college in the database
+    college = CollegeModel.query.get(original_code)
+    if college:
+        college.college_code = college_code
+        college.college_name = college_name
+        db.session.commit()  # Commit the changes to the database
+        return jsonify({'message': 'College updated successfully'}), 200
+    else:
+        return jsonify({'message': 'College not found'}), 404
+
+@app.route('/delete_college', methods=['DELETE'])
+def delete_college():
+    data = request.get_json()
+    college_code = data['college_code']
     
-    # Check for existing college code
-    if CollegeModel.query.get(college_code):
-        return jsonify({"success": False, "message": "College code already exists."}), 400
-    
-    new_college = CollegeModel(college_code=college_code, college_name=college_name)
-    db.session.add(new_college)
-    db.session.commit()
-    
-    return jsonify({"success": True, "message": "College created successfully!"}), 201
+    # Find the college in the database
+    college = CollegeModel.query.get(college_code)
+    if college:
+        db.session.delete(college)  # Delete the college from the database
+        db.session.commit()  # Commit the changes
+        return jsonify({'message': 'College deleted successfully'}), 200
+    else:
+        return jsonify({'message': 'College not found'}), 404
+
+
+@app.route('/check_duplicate_college_code', methods=['POST'])
+def check_duplicate_college_code():
+    college_code = request.form.get('college_code')
+    exists = check_duplicate_college_code(college_code)  # Implement this function to check your DB
+    return jsonify({'exists': exists})
 
 if __name__ == '__main__':
     app.run(debug=True)

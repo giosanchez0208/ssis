@@ -111,8 +111,8 @@
                 <div class="modal-body">
                     <p>Are you sure you want to <u>delete</u> the college<br>
                         <strong><span id="collegeName"></span> (<span id="collegeId"></span>)</strong>?</p>
-                    <p class="text-danger mt-3">Deleting this college will affect all associated programs and students.
-                    </p>
+                    <p class="text-danger mt-3">Deleting this college will remove all associated programs and unenroll
+                        all students enrolled in those programs.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -136,9 +136,9 @@
                         <div class="mb-3">
                             <label for="editCollegeCode" class="form-label">College Code</label>
                             <input type="text" class="form-control" id="editCollegeCode" required>
-                            <small id="collegeCodeWarning" class="text-muted" style="display: none;">Changing this will
-                                affect all associated programs and students. <a href="#" id="revertLink"
-                                    class="text-primary">Revert</a></small>
+                            <small id="editCollegeCodeWarning" class="text-muted" style="display: none;"></small>
+                            <small id="duplicateCollegeCodeWarning" class="text-danger" style="display: none;">College
+                                code already exists.</small>
                         </div>
                         <div class="mb-3">
                             <label for="editCollegeName" class="form-label">College Name</label>
@@ -154,6 +154,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- APPBAR -->
     <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
