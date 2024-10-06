@@ -131,9 +131,11 @@ def check_id():
 
 # programs
 
-@app.route('/programs')
+@app.route('/programs', methods=['GET'])
 def programs():
-    return render_template('programs.html')
+    all_programs = ProgramModel.query.all()  # Fetch all programs from the database
+    return render_template('programs.html', programs=all_programs)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
