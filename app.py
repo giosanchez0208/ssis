@@ -203,5 +203,11 @@ def update_program():
 
     return jsonify({'success': True})
 
+################# COLLEGES #################
+@app.route('/colleges')
+def colleges():
+    all_colleges = CollegeModel.query.all() 
+    return render_template('colleges.html', colleges=all_colleges)  
+
 if __name__ == '__main__':
     app.run(debug=True)
