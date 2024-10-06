@@ -208,6 +208,20 @@ def update_program():
 def colleges():
     all_colleges = CollegeModel.query.all() 
     return render_template('colleges.html', colleges=all_colleges)  
+@app.route('/create_college', methods=['POST'])
+def create_college():
+    college_code = request.form.get('collegeCode')
+    college_name = request.form.get('collegeName')
+    
+    # Check for existing college code
+    if CollegeModel.query.get(college_code):
+        return jsonify({"success": False, "message": "College code already exists."}), 400
+    
+    new_college = CollegeModel(college_code=college_code, college_name=college_name)
+    db.session.add(new_college)
+    db.session.commit()
+    
+    return jsonify({"success": True, "message": "College created successfully!"}), 201
 
 if __name__ == '__main__':
     app.run(debug=True)
