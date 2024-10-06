@@ -205,10 +205,12 @@ def update_program():
 
 ################# COLLEGES #################
 
-@app.route('/colleges')
-def colleges():
-    all_colleges = CollegeModel.query.all() 
-    return render_template('colleges.html', colleges=all_colleges)  
+@app.route('/colleges', methods=['GET'])
+def manage_colleges():
+    colleges = CollegeModel.query.all()
+    programs = ProgramModel.query.all()
+    return render_template('colleges.html', colleges=colleges, programs=programs)
+  
 
 @app.route('/create_college', methods=['POST'])
 def create_college():
@@ -268,8 +270,9 @@ def delete_college():
 
 @app.route('/check_duplicate_college_code', methods=['POST'])
 def check_duplicate_college_code():
-    college_code = request.form.get('college_code')
-    exists = check_duplicate_college_code(college_code)  # Implement this function to check your DB
+    data = request.get_json()  # Get JSON data from the request
+    college_code = data['college_code']  # Extract college_code from data
+    exists = CollegeModel.query.filter_by(college_code=college_code).first() is not None  # Check if it exists
     return jsonify({'exists': exists})
 
 if __name__ == '__main__':
