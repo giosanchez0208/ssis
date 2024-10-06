@@ -175,6 +175,13 @@ def edit_program(course_code):
         'college': program.college
     })
 
+@app.route('/check_course_code', methods=['POST'])
+def check_course_code():
+    data = request.get_json()
+    course_code = data['course_code']
+    exists = ProgramModel.query.filter_by(course_code=course_code).first() is not None
+    return jsonify({'exists': exists})
+
 @app.route('/programs/delete/<string:course_code>', methods=['DELETE'])
 def delete_program(course_code):
     program = ProgramModel.query.get_or_404(course_code)

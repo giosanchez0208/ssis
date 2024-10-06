@@ -19,6 +19,73 @@ $(document).ready(function () {
         }
     });
 
+    // Function to validate the create form
+    function validateCreateForm() {
+        const courseCode = $('#courseCode').val().trim();
+        const courseName = $('#courseName').val().trim();
+        const college = $('#college').val();
+        const hasDuplicate = $('#courseCodeWarning').is(':visible');
+
+        const isValid = courseCode !== '' && courseName !== '' && college !== '' && !hasDuplicate;
+        $('#createProgramBtn').prop('disabled', !isValid);
+    }
+
+    // Validate form on input change
+    $('#createProgramForm input, #createProgramForm select').on('input change', validateCreateForm);
+
+    // Check for duplicate course code
+    $('#courseCode').on('input', function() {
+        const courseCode = $(this).val().trim();
+        if (courseCode === '') {
+            $('#courseCodeWarning').hide();
+            validateCreateForm();
+            return;
+        }
+
+        $.ajax({
+            url: '/check_course_code',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ course_code: courseCode }),
+            success: function(response) {
+                if (response.exists) {
+                    $('#courseCodeWarning').show();
+                } else {
+                    $('#courseCodeWarning').hide();
+                }
+                validateCreateForm();
+            }
+        });
+    });
+
+    // Create program functionality
+    $('#createProgramForm').submit(function(e) {
+        e.preventDefault();
+        const courseCode = $('#courseCode').val().trim();
+        const courseName = $('#courseName').val().trim();
+        const college = $('#college').val();
+
+        $.ajax({
+            url: '/programs',
+            method: 'POST',
+            data: {
+                courseCode: courseCode,
+                courseName: courseName,
+                college: college
+            },
+            success: function(response) {
+                $('#createModal').modal('hide');
+                location.reload();  // Reload the page to show the new program
+            },
+            error: function(xhr) {
+                if (xhr.status === 400) {
+                    $('#courseCodeWarning').show();
+                    validateCreateForm();
+                }
+            }
+        });
+    });
+
     // Edit program functionality
     $(document).on('click', '.edit-btn', function () {
         const courseCode = $(this).data('id');
@@ -125,13 +192,30 @@ $(document).ready(function () {
                     $('#deleteModal').modal('hide');
                     // Remove the row from the DataTable
                     programTable.row($(`button[data-id="${courseCode}"]`).closest('tr')).remove().draw();
-                    alert('Program deleted successfully');
                 } else {
                     alert('Failed to delete program: ' + response.message);
                 }
             },
             error: function (xhr, status, error) {
                 alert('An error occurred while deleting the program: ' + error);
+            }
+        });
+    });
+
+    // Check for duplicate course code
+    $('#courseCode').on('input', function() {
+        const courseCode = $(this).val();
+        $.ajax({
+            url: '/check_course_code',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ course_code: courseCode }),
+            success: function(response) {
+                if (response.exists) {
+                    $('#courseCodeWarning').show();
+                } else {
+                    $('#courseCodeWarning').hide();
+                }
             }
         });
     });
