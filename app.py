@@ -21,7 +21,7 @@ with app.app_context():
 def home():
     return render_template('home.html')
 
-# students
+################# STUDENTS #################
 
 @app.route('/students', methods=['GET', 'POST'])
 def students():
@@ -129,13 +129,79 @@ def check_id():
     exists = StudentModel.query.filter_by(id_num=id_num).first() is not None
     return jsonify({'exists': exists})
 
-# programs
+################# PROGRAMS #################
 
-@app.route('/programs', methods=['GET'])
+@app.route('/programs', methods=['GET', 'POST'])
 def programs():
-    all_programs = ProgramModel.query.all()  # Fetch all programs from the database
-    return render_template('programs.html', programs=all_programs)
+    if request.method == 'POST':
+        # Handle form submission to create a new program
+        course_code = request.form['courseCode']
+        course_name = request.form['courseName']
+        college_code = request.form['college']  # This will capture the selected college code
 
+        new_program = ProgramModel(course_code=course_code, course_name=course_name, college=college_code)
+
+        try:
+            db.session.add(new_program)
+            db.session.commit()
+            return redirect('/programs')
+        except IntegrityError:
+            db.session.rollback()
+            return render_template('programs.html', error_message="Program with this course code already exists.")
+
+    # Fetch all programs and colleges for the dropdown
+    all_programs = ProgramModel.query.all()
+    all_colleges = CollegeModel.query.all()
+
+    return render_template('programs.html', programs=all_programs, colleges=all_colleges)
+
+@app.route('/programs/<string:course_code>', methods=['GET', 'POST'])
+def edit_program(course_code):
+    program = ProgramModel.query.get_or_404(course_code)
+    if request.method == 'POST':
+        program.course_name = request.form['courseName']
+        new_course_code = request.form['courseCode']
+        
+        if new_course_code != program.course_code:
+            program.course_code = new_course_code
+            # Add logic to update students with the old course code
+        
+        db.session.commit()
+        return redirect('/programs')
+
+    return jsonify({
+        'course_code': program.course_code,
+        'course_name': program.course_name,
+        'college': program.college
+    })
+
+@app.route('/programs/delete/<string:course_code>', methods=['DELETE'])
+def delete_program(course_code):
+    program = ProgramModel.query.get_or_404(course_code)
+    students = StudentModel.query.filter_by(course=course_code).all()
+
+    for student in students:
+        student.course = None  # Unenroll students from this course
+    db.session.delete(program)
+    db.session.commit()
+    return jsonify({"message": "Program deleted successfully"})
+
+@app.route('/programs/update', methods=['POST'])
+def update_program():
+    original_course_code = request.form['originalCourseCode']  # Get original course code
+    new_course_code = request.form['courseCode']
+    course_name = request.form['courseName']
+    college_code = request.form['college']
+
+    # Update logic here
+    program = ProgramModel.query.filter_by(course_code=original_course_code).first()
+    if program:
+        program.course_code = new_course_code  # Update fields
+        program.course_name = course_name
+        program.college = college_code
+        db.session.commit()  # Commit changes
+
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     app.run(debug=True)

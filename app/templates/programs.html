@@ -25,7 +25,8 @@
                 <h1>Manage <b>Programs</b></h1>
             </div>
             <div class="col-auto">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create Program</button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create
+                    Program</button>
             </div>
         </div>
         <hr />
@@ -47,20 +48,24 @@
                     <td>{{ program.college }}</td>
                     <td>
                         <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
-                            data-bs-target="#editModal" data-id="{{ program.course_code }}">
+                            data-bs-target="#editModal" data-id="{{ program.course_code }}"
+                            data-name="{{ program.course_name }}" data-college="{{ program.college }}">
                             <i class="fas fa-edit p-1"></i>
                         </button>
+
                     </td>
                     <td>
-                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                            data-program-name="{{ program.course_name }}" data-id="{{ program.course_code }}">
+                        <button class="btn btn-danger btn-sm delete-btn" data-bs-toggle="modal"
+                            data-bs-target="#deleteModal" data-id="{{ program.course_code }}"
+                            data-name="{{ program.course_name }}">
                             <i class="fas fa-trash p-1"></i>
                         </button>
+
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
-        </table>        
+        </table>
     </div>
 
     <!-- ========== Create Program Modal ========== -->
@@ -90,12 +95,17 @@
                         <div class="mb-3">
                             <label for="college" class="form-label">College</label>
                             <select name="college" class="form-select" id="college" required>
-                                <option value="">Select College</option>
+                                <option value="" disabled selected>Select College</option> <!-- Placeholder option -->
                                 {% for college in colleges %}
-                                <option value="{{ college.college_code }}">{{ college.college_name }}</option>
+                                <option value="{{ college.college_code }}">{{ college.college_code }} -
+                                    {{ college.college_name }}</option>
                                 {% endfor %}
                             </select>
+                            <div id="collegeError" class="text-danger" style="display:none;">Course must belong to a
+                                college.</div>
                         </div>
+
+
 
                         <hr />
                         <!-- Submit Button -->
@@ -109,7 +119,7 @@
     </div>
 
     <!-- ========== Delete Confirmation Modal ========== -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -117,8 +127,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to <u>delete</u> the program <br><b><span id="programName"></span> (<span
-                            id="programId"></span>)</b>?
+                    <p>Are you sure you want to <u>delete</u> the program<br>
+                        <strong><span id="programName"></span> (<span id="programId"></span>)</strong>?</p>
+                    <p class="text-danger mt-3">Deleting this program will unenroll all students currently enrolled in
+                        this course.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -128,8 +140,9 @@
         </div>
     </div>
 
+
     <!-- Edit Program Modal -->
-    <div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    <div id="editModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -138,39 +151,83 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editForm">
-                        <!-- Course Code (read-only) -->
-                        <div class="mb-3">
-                            <label for="editCourseCode" class="form-label">Course Code</label>
-                            <input type="text" name="courseCode" class="form-control" id="editCourseCode" readonly disabled>
-                        </div>
-
-                        <!-- Course Name -->
-                        <div class="mb-3">
-                            <label for="editCourseName" class="form-label">Course Name</label>
-                            <input type="text" name="courseName" class="form-control" id="editCourseName" required>
-                        </div>
-
-                        <!-- College Dropdown -->
-                        <div class="mb-3">
-                            <label for="editCollege" class="form-label">College</label>
-                            <select name="college" class="form-select" id="editCollege" required>
-                                <option value="">Select College</option>
-                                {% for college in colleges %}
-                                <option value="{{ college.college_code }}">{{ college.college_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <hr />
-                        <!-- Submit Button -->
-                        <div class="mb-3 text-end">
-                            <button type="submit" class="btn btn-primary" id="editSubmitBtn">Update</button>
-                        </div>
-                    </form>
+                    <div class="mb-3">
+                        <label for="editCourseCode" class="form-label">Course Code</label>
+                        <input type="text" class="form-control" id="editCourseCode" required>
+                        <small id="courseCodeWarning" class="text-muted" style="display: none;">Changing this will
+                            affect all student records associated with this course. <a href="#" id="revertLink"
+                                class="text-primary">Revert</a></small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCourseName" class="form-label">Course Name</label>
+                        <input type="text" class="form-control" id="editCourseName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCollege" class="form-label">College</label>
+                        <select class="form-select" id="editCollege" required>
+                            {% for college in colleges %}
+                            <option value="{{ college.college_code }}">{{ college.college_code }} -
+                                {{ college.college_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" id="originalCourseCode">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateProgramBtn">Update</button>
                 </div>
             </div>
         </div>
+    </div>
+
+
+    <!-- APPBAR -->
+    <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
+        <!-- nav -->
+        <div class="col d-flex align-items-center">
+            <!-- student icon -->
+            <div class="mx-2 nav__btn">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-person text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Students</span>
+                </button>
+            </div>
+            <!-- course icon -->
+            <div class="mx-2 nav__btn nav__btn-active">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-book text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
+                </button>
+            </div>
+            <!-- college icon -->
+            <div class="mx-2 nav__btn">
+                <button class="btn d-flex align-items-center px-3">
+                    <i class="fa-solid fa-building-columns text-muted fs-4"></i>
+                    <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
+                </button>
+            </div>
+        </div>
+        <!-- menus -->
+        <div class="col d-flex align-items-center justify-content-end">
+            <!-- profile -->
+            <img src="#" alt="profile picture" class="rounded-circle me-1"
+                style="width:38px; height: 38px; object-fit: cover" />
+            <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
+        </div>
+        <!-- main menu -->
+        <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
+            style="width:38px; height:38px; object-fit: cover" id="mainMenu" data-bs-toggle="dropdown"
+            aria-expanded="false" type="button">
+            <i class="fa-solid fa-ellipsis"></i>
+        </div>
+        <!-- main menu dropdown -->
+        <ul class="dropdown-menu">
+            <li class="p-1 mx-2">
+                <h2>Menu</h2>
+            </li>
+            <li><a class="dropdown-item" href="#">Log out</a></li>
+        </ul>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
