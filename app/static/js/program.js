@@ -1,132 +1,138 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // Initialize DataTable
-    $('#program_table').DataTable({
-        columnDefs: [
-            { orderable: false, targets: [-2] },
-            { orderable: false, targets: [-1] }
+    const programTable = $('#program_table').DataTable({
+        columnDefs: [{
+                orderable: false,
+                targets: [-2]
+            },
+            {
+                orderable: false,
+                targets: [-1]
+            }
         ],
-        initComplete: function(settings, json) {
+        initComplete: function (settings, json) {
             $('.dataTables_filter input')
-                .filter(function() {
+                .filter(function () {
                     return this.name === 'search';
                 })
                 .attr('placeholder', 'Search...');
         }
     });
 
-    // Validate form and control submit button state
-    validateForm();
+    // Edit program functionality
+    $(document).on('click', '.edit-btn', function () {
+        const courseCode = $(this).data('id');
+        const courseName = $(this).data('name');
+        const college = $(this).data('college');
 
-    function validateForm() {
-        const submitBtn = document.getElementById('submitBtn');
-        const courseCodeInput = document.getElementById('courseCode');
-        const courseNameInput = document.getElementById('courseName');
-        const collegeInput = document.getElementById('college');
-        let isValidCourseCode = false;
+        $('#editCourseCode').val(courseCode);
+        $('#editCourseName').val(courseName);
+        $('#editCollege').val(college);
+        $('#originalCourseCode').val(courseCode);
 
-        function checkFormValidity() {
-            const isCourseCodeFilled = courseCodeInput.value.trim() !== '';
-            const isCourseNameFilled = courseNameInput.value.trim() !== '';
-            const isCollegeSelected = collegeInput.value !== '';
+        // Hide warning initially
+        $('#courseCodeWarning').hide();
 
-            submitBtn.disabled = !(isValidCourseCode && isCourseCodeFilled && isCourseNameFilled && isCollegeSelected);
+        $('#editModal').modal('show');
+    });
+
+    // Show warning only when course code is changed
+    $('#editCourseCode').on('input', function () {
+        const originalCode = $('#originalCourseCode').val();
+        if ($(this).val() !== originalCode) {
+            $('#courseCodeWarning').show();
+        } else {
+            $('#courseCodeWarning').hide();
+        }
+    });
+
+    // Revert course code
+    $('#revertLink').click(function (e) {
+        e.preventDefault();
+        const originalCode = $('#originalCourseCode').val();
+        $('#editCourseCode').val(originalCode);
+        $('#courseCodeWarning').hide();
+    });
+
+    // Update program
+    $('#updateProgramBtn').click(function () {
+        const originalCourseCode = $('#originalCourseCode').val();
+        const courseCode = $('#editCourseCode').val();
+        const courseName = $('#editCourseName').val();
+        const college = $('#editCollege').val();
+
+        // Validate college dropdown
+        if (college === "") {
+            alert('Course must belong to a college.');
+            return; // Prevent form submission
         }
 
-        // Course Code validation on blur
-        courseCodeInput.addEventListener('blur', function () {
-            const courseCode = this.value;
-            fetch('/check_course_code', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ course_code: courseCode }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                isValidCourseCode = !data.exists;
-                document.getElementById('courseCodeError').style.display = data.exists ? 'block' : 'none';
-                checkFormValidity();
-            });
-        });
-
-        // Add input listeners to recheck form on changes
-        courseCodeInput.addEventListener('input', checkFormValidity);
-        courseNameInput.addEventListener('input', checkFormValidity);
-        collegeInput.addEventListener('change', checkFormValidity);
-
-        // Initial check in case of any pre-filled values
-        checkFormValidity();
-    }
-
-    // Handle edit modal logic
-    const editModal = document.getElementById('editModal');
-
-    editModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const courseCode = button.getAttribute('data-id');
-
-        fetch(`/edit_program/${courseCode}`)
-            .then(response => response.json())
-            .then(program => {
-                document.getElementById('editCourseCode').value = program.course_code;
-                document.getElementById('editCourseName').value = program.course_name;
-                document.getElementById('editCollege').value = program.college;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while fetching program data.');
-            });
-    });
-
-    // Enable/disable editing of Course Code and College
-    document.getElementById('enableEditCourseCode').addEventListener('change', function() {
-        document.getElementById('editCourseCode').readOnly = !this.checked;
-    });
-
-    document.getElementById('enableEditCollege').addEventListener('change', function() {
-        document.getElementById('editCollege').disabled = !this.checked;
-    });
-
-    // Handle edit form submission
-    const editForm = document.getElementById('editForm');
-    editForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const courseCode = document.getElementById('editCourseCode').value;
-
-        fetch(`/edit_program/${courseCode}`, {
+        $.ajax({
+            url: '/programs/update',
             method: 'POST',
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const modal = bootstrap.Modal.getInstance(editModal);
-                modal.hide();
-                location.reload();
-            } else {
-                alert(data.message || 'An error occurred while updating the program.');
+            data: {
+                originalCourseCode: originalCourseCode,
+                courseCode: courseCode,
+                courseName: courseName,
+                college: college
+            },
+            success: function (response) {
+                if (response.success) {
+                    $('#editModal').modal('hide');
+                    // Update the table row
+                    const row = programTable.row($(`button[data-id="${originalCourseCode}"]`).closest('tr'));
+                    const newData = [
+                        courseCode,
+                        courseName,
+                        college,
+                        `<button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editModal" data-id="${courseCode}" data-name="${courseName}" data-college="${college}">
+                            <i class="fas fa-edit p-1"></i>
+                        </button>`,
+                        `<button class="btn btn-danger btn-sm delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${courseCode}" data-name="${courseName}">
+                            <i class="fas fa-trash p-1"></i>
+                        </button>`
+                    ];
+                    row.data(newData).draw();
+                } else {
+                    alert('Failed to update program: ' + response.message);
+                }
+            },
+            error: function () {
+                alert('An error occurred while updating the program');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the program.');
         });
     });
 
-    // Delete modal logic
-    $('#deleteModal').on('show.bs.modal', function(event) {
-        var button = $(event.relatedTarget);
-        var programName = button.data('program-name');
-        var programId = button.data('id');
-        
-        var modal = $(this);
-        modal.find('#programName').text(programName);
-        modal.find('#programId').text(programId);
-        
-        modal.find('#confirmDeleteBtn').off('click').on('click', function() {
-            window.location.href = `/delete_program/${programId}`;
+    // Delete program functionality
+    $(document).on('click', '.delete-btn', function () {
+        const courseCode = $(this).data('id');
+        const courseName = $(this).data('name');
+
+        $('#programName').text(courseName);
+        $('#programId').text(courseCode);
+        $('#deleteModal').modal('show');
+    });
+
+    // Confirm delete
+    $('#confirmDeleteBtn').click(function () {
+        const courseCode = $('#programId').text();
+
+        $.ajax({
+            url: `/programs/delete/${courseCode}`,
+            method: 'DELETE',
+            success: function (response) {
+                if (response.message === "Program deleted successfully") {
+                    $('#deleteModal').modal('hide');
+                    // Remove the row from the DataTable
+                    programTable.row($(`button[data-id="${courseCode}"]`).closest('tr')).remove().draw();
+                    alert('Program deleted successfully');
+                } else {
+                    alert('Failed to delete program: ' + response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert('An error occurred while deleting the program: ' + error);
+            }
         });
     });
 });
