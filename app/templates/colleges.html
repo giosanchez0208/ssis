@@ -65,7 +65,6 @@
         </table>
     </div>
 
-    <!-- ========== Create College Modal ========== -->
     <div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -80,8 +79,9 @@
                         <div class="mb-3">
                             <label for="collegeCode" class="form-label">College Code</label>
                             <input type="text" name="collegeCode" class="form-control" id="collegeCode" required>
+                            <small id="collegeCodeWarning" class="text-danger" style="display:none;">College code
+                                already exists.</small> <!-- Warning Message -->
                         </div>
-
                         <!-- College Name -->
                         <div class="mb-3">
                             <label for="collegeName" class="form-label">College Name</label>
@@ -98,6 +98,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- ========== Delete Confirmation Modal ========== -->
     <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
