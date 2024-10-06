@@ -24,25 +24,25 @@ $(document).ready(function () {
         event.preventDefault(); // Prevent the default form submission
 
         const collegeCode = $('#collegeCode').val();
-        const collegeName = $('#collegeName').val(); // Ensure this is set correctly
+        const collegeName = $('#collegeName').val();
 
         // Hide the warning initially
-        $('#collegeCodeWarning').hide();
+        $('#collegeCodeWarning').css('display', 'none'); // Change this line
 
         $.ajax({
             type: 'POST',
             url: '/create_college',
-            contentType: 'application/json', // Set content type to JSON
-            data: JSON.stringify({ // Stringify the data
+            contentType: 'application/json',
+            data: JSON.stringify({
                 college_code: collegeCode,
-                college_name: collegeName // Ensure this is not null
+                college_name: collegeName
             }),
             success: function (response) {
-                location.reload(); // Reloads the page to show the new college
+                location.reload();
             },
             error: function (xhr) {
-                if (xhr.status === 400) { // Check for specific error code
-                    $('#collegeCodeWarning').show(); // Show the warning
+                if (xhr.status === 400) {
+                    $('#collegeCodeWarning').css('display', 'block'); // Change this line
                 }
             }
         });
@@ -71,17 +71,21 @@ $(document).ready(function () {
         if (currentCode !== originalCode) {
             // Logic to check for duplicates
             $.ajax({
-                url: '/check_duplicate_college_code', // Example URL
+                url: '/check_duplicate_college_code', // Ensure this URL is correct
                 type: 'POST',
-                data: {
+                contentType: 'application/json', // Send data as JSON
+                data: JSON.stringify({
                     college_code: currentCode
-                },
+                }), // Stringify the data
                 success: function (response) {
                     if (response.exists) {
                         $('#duplicateCollegeCodeWarning').show(); // Show duplicate warning
                     } else {
                         $('#duplicateCollegeCodeWarning').hide(); // Hide duplicate warning
                     }
+                },
+                error: function () {
+                    // Handle error if needed
                 }
             });
         } else {
@@ -89,18 +93,41 @@ $(document).ready(function () {
         }
     });
 
-
     // Update College
     $('#updateCollegeBtn').on('click', function () {
         const collegeCode = $('#editCollegeCode').val();
         const collegeName = $('#editCollegeName').val();
         const originalCollegeCode = $('#originalCollegeCode').val();
 
+        // Show the warning if the code is a duplicate before updating
+        if (collegeCode !== originalCollegeCode) {
+            $.ajax({
+                url: '/check_duplicate_college_code',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    college_code: collegeCode
+                }),
+                success: function (response) {
+                    if (response.exists) {
+                        $('#duplicateCollegeCodeWarning').show(); // Show duplicate warning
+                    } else {
+                        proceedToUpdate(collegeCode, collegeName, originalCollegeCode); // Proceed if no duplicate
+                    }
+                }
+            });
+        } else {
+            proceedToUpdate(collegeCode, collegeName, originalCollegeCode); // Proceed if no change
+        }
+    });
+
+    // Function to handle the update
+    function proceedToUpdate(collegeCode, collegeName, originalCollegeCode) {
         $.ajax({
             type: 'POST',
             url: '/update_college',
-            contentType: 'application/json', // Set content type to JSON
-            data: JSON.stringify({ // Stringify the data
+            contentType: 'application/json',
+            data: JSON.stringify({
                 college_code: collegeCode,
                 college_name: collegeName,
                 original_code: originalCollegeCode
@@ -112,12 +139,16 @@ $(document).ready(function () {
                 // Handle any errors here
             }
         });
-    });
+    }
 
-    // Delete College
+
+    /// Delete College
     $(document).on('click', '.delete-btn', function () {
         const collegeCode = $(this).data('id');
         const collegeName = $(this).data('name');
+
+        console.log('College Code:', collegeCode); // Debugging log
+        console.log('College Name:', collegeName); // Debugging log
 
         $('#collegeId').text(collegeCode);
         $('#collegeName').text(collegeName);
@@ -128,18 +159,19 @@ $(document).ready(function () {
         const collegeCode = $('#collegeId').text();
 
         $.ajax({
-            type: 'DELETE', // Change this to DELETE
+            type: 'DELETE',
             url: '/delete_college',
-            contentType: 'application/json', // Set content type to JSON
-            data: JSON.stringify({ // Stringify the data
+            contentType: 'application/json',
+            data: JSON.stringify({
                 college_code: collegeCode
             }),
             success: function (response) {
-                location.reload(); // Reloads the page to show updated college list
+                location.reload();
             },
             error: function (xhr) {
                 // Handle any errors here
             }
         });
     });
+
 });
