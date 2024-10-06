@@ -81,7 +81,8 @@
                         <div class="mb-3">
                             <label for="courseCode" class="form-label">Course Code</label>
                             <input type="text" class="form-control" id="courseCode" name="courseCode" required>
-                            <small id="courseCodeWarning" class="text-danger" style="display: none;">This course code already exists.</small>
+                            <small id="courseCodeWarning" class="text-danger" style="display: none;">This course code
+                                already exists.</small>
                         </div>
                         <div class="mb-3">
                             <label for="courseName" class="form-label">Course Name</label>
@@ -118,7 +119,7 @@
                             <label for="editCourseCode" class="form-label">Course Code</label>
                             <input type="text" class="form-control" id="editCourseCode" name="editCourseCode" required>
                             <small id="courseCodeWarning" class="text-danger" style="display: none;">
-                                Changing this will affect all student records associated with this course. 
+                                Changing this will affect all student records associated with this course.
                                 <a href="#" id="revertLink">Revert</a>
                             </small>
                         </div>
@@ -154,7 +155,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete the program <strong><span id="programName"></span></strong> (<span id="programId"></span>)?</p>
+                    <p>Are you sure you want to delete the program <strong><span id="programName"></span></strong>
+                        (<span id="programId"></span>)?</p>
                     <p>Deleting this program will unenroll all students currently enrolled in this course.</p>
                 </div>
                 <div class="modal-footer">
@@ -172,24 +174,24 @@
         <div class="col d-flex align-items-center">
             <!-- student icon -->
             <div class="mx-2 nav__btn">
-                <button class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('students') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-person text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Students</span>
-                </button>
+                </a>
             </div>
             <!-- course icon -->
             <div class="mx-2 nav__btn nav__btn-active">
-                <button class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('programs') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-book text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
-                </button>
+                </a>
             </div>
             <!-- college icon -->
             <div class="mx-2 nav__btn">
-                <button class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('manage_colleges') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-building-columns text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
-                </button>
+                </a>
             </div>
         </div>
         <!-- menus -->
@@ -210,9 +212,10 @@
             <li class="p-1 mx-2">
                 <h2>Menu</h2>
             </li>
-            <li><a class="dropdown-item" href="#">Log out</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('home') }}">Log out</a></li>
         </ul>
     </div>
+
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
