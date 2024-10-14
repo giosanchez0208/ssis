@@ -3,6 +3,9 @@ from models import db, StudentModel, ProgramModel, CollegeModel
 from sqlalchemy.exc import IntegrityErrorfrom authlib.integrations.flask_client import OAuth
 from flask import Flask, redirect, url_for, session, render_template
 import os, random, string
+=======
+from sqlalchemy.exc import IntegrityError
+import os
 
 # Config
 
@@ -79,15 +82,7 @@ def authorize_google_callback():
 @app.route('/')
 def home():
     return render_template('home.html', user=session.get('user'))  # Pass user info to the template
-
-# Route to logout
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/')
-
-# Routes
-
+  
 ################# STUDENTS #################
 
 @app.route('/students', methods=['GET', 'POST'])

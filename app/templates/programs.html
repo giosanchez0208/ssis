@@ -200,6 +200,7 @@
             <img src="{{ session['user']['profile'] }}" alt="profile picture" class="rounded-circle me-1"
                 style="width:38px; height: 38px; object-fit: cover" />
             <p class="m-0 py-2 px-2 d-none d-lg-block">{{ session['user']['name'] }}</p>
+
         </div>
         <!-- main menu -->
         <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
@@ -212,7 +213,9 @@
             <li class="p-1 mx-2">
                 <h2>Menu</h2>
             </li>
+
             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log out</a></li>
+
         </ul>
     </div>
 
