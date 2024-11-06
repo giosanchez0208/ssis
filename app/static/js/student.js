@@ -15,7 +15,7 @@ $(document).ready(function() {
     });
 
     // Fetch programs and populate dropdown
-    fetch('/get_programs') // Adjust this URL to your actual endpoint
+    fetch(`/students/get_programs`)  // Adjust this URL to your actual endpoint
         .then(response => response.json())
         .then(programs => {
             programs.sort((a, b) => a.course_name.localeCompare(b.course_name));
@@ -44,7 +44,7 @@ $(document).ready(function() {
         modal.find('#studentId').text(studentId);
         
         modal.find('#confirmDeleteBtn').off('click').on('click', function() {
-            window.location.href = `/delete/${studentId}`;
+            window.location.href = `/students/delete/${studentId}`;
         });
     });
 
@@ -99,7 +99,7 @@ $(document).ready(function() {
         // ID validation on blur
         idInput.addEventListener('blur', function () {
             const fullId = this.value;
-            fetch('/check_id', {
+            fetch(`/students/check_id`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ $(document).ready(function() {
         const button = event.relatedTarget;
         const studentId = button.getAttribute('data-id');
 
-        fetch(`/edit/${studentId}`)
+        fetch(`/students/edit/${studentId}`)
             .then(response => response.json())
             .then(student => {
                 document.getElementById('editIdNumber').value = student.id_num;
@@ -176,7 +176,7 @@ $(document).ready(function() {
         const formData = new FormData(this);
         const studentId = document.getElementById('editIdNumber').value;
 
-        fetch(`/edit/${studentId}`, {
+        fetch(`/students/edit/${studentId}`, {
             method: 'POST',
             body: formData,
         })

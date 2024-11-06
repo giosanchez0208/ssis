@@ -58,19 +58,29 @@ def list_students():
                          students=StudentModel.query.all(), 
                          programs=ProgramModel.query.all())
 
+# Add this new route for getting programs
+@student_bp.route('/get_programs', methods=['GET'])
+def get_programs():
+    programs = ProgramModel.query.all()
+    return jsonify([{
+        'course_code': program.course_code,
+        'course_name': program.course_name
+    } for program in programs])
+
 @student_bp.route('/edit/<string:id_num>', methods=['GET', 'POST'])
 def edit(id_num):
     student = StudentModel.query.get_or_404(id_num)
     if request.method == 'POST':
         try:
-            student.first_name = request.form['firstName']
-            student.last_name = request.form['lastName']
-            student.course = request.form['course'] or None
-            student.year_level = request.form['year']
-            student.gender = request.form['gender']
+            form_data = request.form
+            student.first_name = form_data['firstName']
+            student.last_name = form_data['lastName']
+            student.course = form_data['course'] or None
+            student.year_level = form_data['year']
+            student.gender = form_data['gender']
             
             if student.gender == "Custom":
-                custom_gender = request.form.get('customGender')
+                custom_gender = form_data.get('customGender')
                 if custom_gender:
                     student.gender = custom_gender
 
