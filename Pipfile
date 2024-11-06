@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 flask = "*"
+python-dotenv = "*"
+cloudinary = "*"
+requests = "*"
+flask-migrate = "*"
 
 [dev-packages]
 

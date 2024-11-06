@@ -10,18 +10,20 @@ class StudentModel(db.Model):
     course = db.Column(db.String(16), nullable=True)
     gender = db.Column(db.Text, nullable=False)
     year_level = db.Column(db.Integer, nullable=False)
-    profile_picture_id = db.Column(db.String(16), nullable=True)
+    profile_picture_id = db.Column(db.String(100), nullable=True)
     
-    def __init__(self, id_num, first_name, last_name, gender, year_level, course=None):
+    def __init__(self, id_num, first_name, last_name, gender, year_level, course=None, profile_picture_id=None):
         self.id_num = id_num
         self.first_name = first_name
         self.last_name = last_name
         self.gender = gender
         self.year_level = year_level
         self.course = course
+        self.profile_picture_id = profile_picture_id
         
         def __repr__(self):
             return f"{self.first_name}:{self.last_name}"
+        
 class ProgramModel(db.Model):
     __tablename__ = "programs"
 

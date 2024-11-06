@@ -30,6 +30,11 @@ class Config:
         'X-XSS-Protection': '1; mode=block'
     }
 
+    # Cloudinary settings
+    CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
+
 class DevelopmentConfig(Config):
     """Development configuration."""
     
@@ -82,10 +87,12 @@ def create_app(config_class=DevelopmentConfig):
     from routes.student_routes import student_bp
     from routes.program_routes import program_bp
     from routes.college_routes import college_bp
+    from routes.cloudinary_routes import cloudinary_bp 
     
     app.register_blueprint(student_bp)
     app.register_blueprint(program_bp)
     app.register_blueprint(college_bp)
+    app.register_blueprint(cloudinary_bp)
     
     # Create tables
     with app.app_context():
