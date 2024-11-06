@@ -156,27 +156,27 @@
     </div>
 
 
-    <!-- APPBAR -->
+    <!-- ========== APPBAR ========== -->
     <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
         <!-- nav -->
         <div class="col d-flex align-items-center">
             <!-- student icon -->
             <div class="mx-2 nav__btn">
-                <a href="{{ url_for('students') }}" class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('student.list_students') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-person text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Students</span>
                 </a>
             </div>
             <!-- course icon -->
             <div class="mx-2 nav__btn">
-                <a href="{{ url_for('programs') }}" class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('program.list_programs') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-book text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
                 </a>
             </div>
             <!-- college icon -->
             <div class="mx-2 nav__btn  nav__btn-active">
-                <a href="{{ url_for('manage_colleges') }}" class="btn d-flex align-items-center px-3">
+                <a href="{{ url_for('college.list_colleges') }}" class="btn d-flex align-items-center px-3">
                     <i class="fa-solid fa-building-columns text-muted fs-4"></i>
                     <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
                 </a>
@@ -208,7 +208,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
-    <script src="static/js/college.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/college.js') }}"></script>
 
 </body>
 
