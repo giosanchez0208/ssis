@@ -41,10 +41,10 @@
                 </select>
             </div>
         </div>
-        <table id="student_table" class="table table-striped" style="width:100%">
+        <table id="student_table" class="table table-hover" style="width:100%">
             <thead>
                 <tr>
-                    <th class="button-column">Profile Picture</th>
+                    <th class="button-column"></th> <!-- Profile Picture -->
                     <th>ID Number</th>
                     <th>Full Name</th>
                     <th class="hide-on-mobile-view">Year Level</th>
@@ -57,8 +57,8 @@
             <tbody>
                 {% for student in students %}
                 <tr>
-                    <td class="button-column mx-2">
-                        <img src="" alt="Profile Picture" class="rounded-circle" width="50" height="50">
+                    <td class="button-column">
+                        <img src="" alt="Profile Picture" class="rounded-circle" width="15" height="15">
                     </td>
                     <td>{{ student.id_num }}</td>
                     <td><b>{{ student.last_name }}</b>, {{ student.first_name }}</td>

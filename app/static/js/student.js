@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    
     // Initialize the DataTable
     var table = $('#student_table').DataTable({
         processing: true,
@@ -17,7 +18,7 @@ $(document).ready(function() {
                 orderable: false,
                 searchable: false,
                 render: function (data, type, row) {
-                    return `<img src="" alt="Profile Picture" class="rounded-circle" width="50" height="50">`;
+                    return `<img src="" alt="Profile Picture" class="rounded-circle mx-2" width="30" height="30">`;
                 }
             },
             { 
