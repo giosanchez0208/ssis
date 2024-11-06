@@ -124,9 +124,14 @@ def get_student_data():
     search_value = request.form.get('search[value]', '')
     order_column = int(request.form.get('order[0][column]', 0))
     order_dir = request.form.get('order[0][dir]', 'asc')
+    course_filter = request.form.get('courseFilter', '')
 
     # Base query
     query = StudentModel.query
+
+    # Apply course filter if selected
+    if course_filter:
+        query = query.filter(StudentModel.course == course_filter)
 
     # Apply search filter if search value exists
     if search_value:

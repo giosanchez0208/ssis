@@ -1,10 +1,15 @@
 $(document).ready(function() {
-    $('#student_table').DataTable({
+    // Initialize the DataTable
+    var table = $('#student_table').DataTable({
         processing: true,
         serverSide: true,
         ajax: {
             url: '/students/data',
-            type: 'POST'
+            type: 'POST',
+            data: function(d) {
+                // Add the course filter value to the data sent to the server
+                d.courseFilter = $('#courseFilter').val();
+            }
         },
         columns: [
             { 
@@ -72,6 +77,10 @@ $(document).ready(function() {
         ],
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100]
+    });
+
+    $('#courseFilter').on('change', function() {
+        table.ajax.reload();
     });
 
 

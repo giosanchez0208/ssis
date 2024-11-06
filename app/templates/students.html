@@ -30,6 +30,17 @@
             </div>
         </div>
         <hr />
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label for="courseFilter" class="form-label">Filter by course:</label>
+                <select class="form-select" id="courseFilter">
+                    <option value="">All Courses</option>
+                    {% for program in programs %}
+                    <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
         <table id="student_table" class="table table-striped" style="width:100%">
             <thead>
                 <tr>
