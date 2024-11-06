@@ -21,7 +21,7 @@ $(document).ready(function() {
                         return `<img src="${cloudinaryUrl}" alt="Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
                     } else {
                         // Return default profile picture if no profile_picture_id exists
-                        return `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" alt="Default Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
+                        return `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" alt="Default Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
                     }
                 }
             },
@@ -281,7 +281,7 @@ $(document).ready(function() {
                     const cloudinaryUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/c_fill,h_100,w_100/${student.profile_picture_id}`;
                     profilePreview.src = cloudinaryUrl;
                 } else {
-                    profilePreview.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+                    profilePreview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=';
                 }
     
                 // Handle gender selection
