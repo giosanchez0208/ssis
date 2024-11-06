@@ -133,6 +133,7 @@ env.bak/
 venv.bak/
 
 # Node.js modules
+bootstrap/
 node_modules/
 *.json
 
