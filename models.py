@@ -10,7 +10,8 @@ class StudentModel(db.Model):
     course = db.Column(db.String(16), nullable=True)
     gender = db.Column(db.Text, nullable=False)
     year_level = db.Column(db.Integer, nullable=False)
-
+    profile_picture_id = db.Column(db.String(16), nullable=True)
+    
     def __init__(self, id_num, first_name, last_name, gender, year_level, course=None):
         self.id_num = id_num
         self.first_name = first_name

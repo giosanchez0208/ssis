@@ -89,6 +89,10 @@
     border-bottom: 3px solid #0d6efd;
 }
 
+td {
+    vertical-align: middle;
+}
+
 @media (min-width: 62em) {
 
     html,

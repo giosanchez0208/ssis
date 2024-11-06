@@ -1,18 +1,79 @@
 $(document).ready(function() {
-    // Initialize DataTable
     $('#student_table').DataTable({
-        columnDefs: [
-            { orderable: false, targets: [-2] },
-            { orderable: false, targets: [-1] }
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/students/data',
+            type: 'POST'
+        },
+        columns: [
+            { 
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    return `<img src="" alt="Profile Picture" class="rounded-circle" width="50" height="50">`;
+                }
+            },
+            { 
+                data: 'id_num',
+                orderable: true
+            },
+            { 
+                data: null,
+                orderable: true,
+                render: function (data, type, row) {
+                    return `<b>${data.last_name}</b>, ${data.first_name}`;
+                }
+            },
+            { 
+                data: 'year_level',
+                orderable: true,
+                className: 'hide-on-mobile-view'
+            },
+            { 
+                data: 'course',
+                orderable: true
+            },
+            { 
+                data: 'gender',
+                orderable: true,
+                className: 'hide-on-mobile-view'
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'button-column',
+                render: function (data, type, row) {
+                    return `
+                        <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
+                            data-bs-target="#editModal" data-id="${row.id_num}">
+                            <i class="fas fa-edit p-1"></i>
+                        </button>
+                    `;
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'button-column',
+                render: function (data, type, row) {
+                    return `
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                            data-student-name="${row.last_name}, ${row.first_name}"
+                            data-id="${row.id_num}">
+                            <i class="fas fa-trash p-1"></i>
+                        </button>
+                    `;
+                }
+            }
         ],
-        initComplete: function(settings, json) {
-            $('.dataTables_filter input')
-                .filter(function() {
-                    return this.name === 'search';
-                })
-                .attr('placeholder', 'Search...');
-        }
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100]
     });
+
 
     // Fetch programs and populate dropdown
     fetch(`/students/get_programs`)  // Adjust this URL to your actual endpoint

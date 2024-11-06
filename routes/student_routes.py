@@ -114,3 +114,75 @@ def check_id():
     id_num = request.json['id_num']
     exists = StudentModel.query.filter_by(id_num=id_num).first() is not None
     return jsonify({'exists': exists})
+
+# Flask route to fetch student data
+@student_bp.route('/data', methods=['POST'])
+def get_student_data():
+    # Get the paging and sorting parameters from the request
+    start = int(request.form['start'])
+    length = int(request.form['length'])
+    search_value = request.form.get('search[value]', '')
+    order_column = int(request.form.get('order[0][column]', 0))
+    order_dir = request.form.get('order[0][dir]', 'asc')
+
+    # Base query
+    query = StudentModel.query
+
+    # Apply search filter if search value exists
+    if search_value:
+        search_term = f"%{search_value}%"
+        query = query.filter(
+            db.or_(
+                StudentModel.id_num.like(search_term),
+                StudentModel.first_name.like(search_term),
+                StudentModel.last_name.like(search_term),
+                StudentModel.course.like(search_term),
+                StudentModel.gender.like(search_term)
+            )
+        )
+
+    # Define column mapping for sorting
+    column_mapping = {
+        0: None,  # Profile picture column - not sortable
+        1: StudentModel.id_num,
+        2: StudentModel.last_name,  # Sort by last name for the full name column
+        3: StudentModel.year_level,
+        4: StudentModel.course,
+        5: StudentModel.gender,
+        6: None,  # Edit button - not sortable
+        7: None   # Delete button - not sortable
+    }
+
+    # Apply sorting
+    if order_column in column_mapping and column_mapping[order_column] is not None:
+        sort_column = column_mapping[order_column]
+        if order_dir == 'desc':
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
+    # Get total records before pagination
+    total_records = StudentModel.query.count()
+    filtered_records = query.count()
+
+    # Apply pagination
+    students = query.offset(start).limit(length).all()
+
+    # Prepare the response data
+    data = {
+        'draw': int(request.form['draw']),
+        'recordsTotal': total_records,
+        'recordsFiltered': filtered_records,
+        'data': [
+            {
+                'id_num': student.id_num,
+                'first_name': student.first_name,
+                'last_name': student.last_name,
+                'year_level': student.year_level,
+                'course': student.course,
+                'gender': student.gender
+            } for student in students
+        ]
+    }
+    
+    return jsonify(data)
