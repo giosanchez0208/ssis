@@ -58,7 +58,21 @@
                 {% for student in students %}
                 <tr>
                     <td class="button-column">
-                        <img src="" alt="Profile Picture" class="rounded-circle" width="15" height="15">
+                        {% if student.profile_picture_id %}
+                            <img src="https://res.cloudinary.com/{{ config.CLOUDINARY_CLOUD_NAME }}/image/upload/c_fill,h_30,w_30/{{ student.profile_picture_id }}"
+                                class="rounded-circle"
+                                width="30"
+                                height="30"
+                                style="object-fit: cover;"
+                                alt="Profile Picture of {{ student.first_name }}">
+                        {% else %}
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                                class="rounded-circle"
+                                width="30"
+                                height="30"
+                                style="object-fit: cover;"
+                                alt="Default Profile Picture">
+                        {% endif %}
                     </td>
                     <td>{{ student.id_num }}</td>
                     <td><b>{{ student.last_name }}</b>, {{ student.first_name }}</td>
@@ -66,16 +80,21 @@
                     <td>{{ student.course }}</td>
                     <td class="hide-on-mobile-view">{{ student.gender }}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
-                            data-bs-target="#editModal" data-id="{{ student.id_num }}">
-                            <i class="fas fa-edit p-1"></i> <!-- Edit icon -->
+                        <button class="btn btn-warning btn-sm edit-btn" 
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal" 
+                                data-id="{{ student.id_num }}"
+                                data-profile-picture="{{ student.profile_picture_id }}">
+                            <i class="fas fa-edit p-1"></i>
                         </button>
                     </td>
                     <td>
-                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                            data-student-name="{{ student.last_name }}, {{ student.first_name }}"
-                            data-id="{{ student.id_num }}">
-                            <i class="fas fa-trash p-1"></i> <!-- Delete icon -->
+                        <button class="btn btn-danger btn-sm" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal"
+                                data-student-name="{{ student.last_name }}, {{ student.first_name }}"
+                                data-id="{{ student.id_num }}">
+                            <i class="fas fa-trash p-1"></i>
                         </button>
                     </td>
                 </tr>
@@ -99,6 +118,22 @@
                 </div>
                 <div class="modal-body">
                     <form action="{{ url_for('student.list_students') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="profilePicture" class="form-label">Profile Picture</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <img id="profilePreview" 
+                                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" 
+                                    alt="Profile preview" 
+                                    class="rounded-circle" 
+                                    style="width: 100px; height: 100px; object-fit: cover;">
+
+                                <div class="d-flex flex-column gap-2">
+                                    <input type="file" class="form-control" id="profilePicture" name="profilePicture" 
+                                        accept="image/*" style="width: 250px;">
+                                    <small class="text-muted">Recommended: Square image, max 2MB</small>
+                                </div>
+                            </div>
+                        </div>
                         <!-- ID Number -->
                         <div class="mb-3">
                             <label for="idNumber" class="form-label">ID Number</label>
@@ -196,6 +231,7 @@
             </div>
         </div>
     </div>
+
     <!-- Edit Student Modal -->
     <div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -208,6 +244,23 @@
                 <div class="modal-body">
                     <form id="editForm">
                         <form id="editForm">
+                            <!-- Profile Picture Upload -->
+                            <div class="mb-3">
+                                <label for="editProfilePicture" class="form-label">Profile Picture</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img id="editProfilePreview" 
+                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" 
+                                        alt="Current profile picture" 
+                                        class="rounded-circle" 
+                                        style="width: 100px; height: 100px; object-fit: cover;">
+                                    <div class="d-flex flex-column gap-2">
+                                        <small class="text-muted mb-1">Update Photo:</small>
+                                        <input type="file" class="form-control" id="editProfilePicture" name="profilePicture" 
+                                            accept="image/*" style="width: 250px;">
+                                        <small class="text-muted">Recommended: Square image, max 2MB</small>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- ID Number (read-only) -->
                             <div class="mb-3">
                                 <label for="editIdNumber" class="form-label">ID Number</label>
@@ -270,10 +323,10 @@
                                 </div>
 
                                 <!-- Gender Custom Text Field (hidden by default) -->
-                                <div class="mt-2" id="editCustomGenderField" style="display: none;">
+                                <small class="mt-2" id="editCustomGenderField" style="display: none;">
                                     <input type="text" class="form-control" placeholder="Gender (Optional)"
                                         id="editCustomGender" name="customGender">
-                                </div>
+                                </small>
                             </div>
                             <hr />
                             <!-- Submit Button -->
@@ -344,7 +397,7 @@
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/student.js') }}"></script>
-
+    <script> const cloudinaryCloudName = '{{ config.CLOUDINARY_CLOUD_NAME }}'; </script>
 
 </body>
 

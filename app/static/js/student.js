@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    
     // Initialize the DataTable
     var table = $('#student_table').DataTable({
         processing: true,
@@ -8,7 +7,6 @@ $(document).ready(function() {
             url: '/students/data',
             type: 'POST',
             data: function(d) {
-                // Add the course filter value to the data sent to the server
                 d.courseFilter = $('#courseFilter').val();
             }
         },
@@ -18,7 +16,13 @@ $(document).ready(function() {
                 orderable: false,
                 searchable: false,
                 render: function (data, type, row) {
-                    return `<img src="" alt="Profile Picture" class="rounded-circle mx-2" width="30" height="30">`;
+                    if (row.profile_picture_id) {
+                        const cloudinaryUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/c_fill,h_30,w_30/${row.profile_picture_id}`;
+                        return `<img src="${cloudinaryUrl}" alt="Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
+                    } else {
+                        // Return default profile picture if no profile_picture_id exists
+                        return `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" alt="Default Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
+                    }
                 }
             },
             { 
@@ -80,23 +84,80 @@ $(document).ready(function() {
         lengthMenu: [10, 25, 50, 100]
     });
 
+    // Course filter change handler
     $('#courseFilter').on('change', function() {
         table.ajax.reload();
     });
 
-
-    // Fetch programs and populate dropdown
-    fetch(`/students/get_programs`)  // Adjust this URL to your actual endpoint
+    // Cloudinary upload function
+    async function uploadToCloudinary(file, studentId = null) {
+        console.log('Starting uploadToCloudinary', { 
+            fileName: file.name, 
+            fileSize: file.size, 
+            fileType: file.type,
+            studentId 
+        });
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        if (studentId) {
+            formData.append('student_id', studentId);
+        }
+        
+        try {
+            const endpoint = studentId ? '/cloudinary/update' : '/cloudinary/upload';
+            console.log('Uploading to endpoint:', endpoint);
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+            
+            console.log('Upload response status:', response.status);
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', e);
+                throw new Error('Invalid response from server');
+            }
+            
+            console.log('Parsed response data:', data);
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+            
+            // Return the public_id instead of the URL
+            return data.public_id;
+        } catch (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
+    }
+    
+    // Fetch and populate programs dropdown
+    fetch('/students/get_programs')
         .then(response => response.json())
         .then(programs => {
             programs.sort((a, b) => a.course_name.localeCompare(b.course_name));
             const courseDropdown = document.getElementById("course");
-            courseDropdown.innerHTML = ""; // Clear existing options
+            courseDropdown.innerHTML = "";
 
+            // Add the "Not enrolled in any program" option first
+            const defaultOption = document.createElement("option");
+            defaultOption.value = "none";
+            defaultOption.textContent = "Not enrolled in any program";
+            courseDropdown.appendChild(defaultOption);
+
+            // Add all other programs
             programs.forEach(program => {
                 const option = document.createElement("option");
                 option.value = program.course_code;
-                option.textContent = `${program.course_code} - ${program.course_name}`; // Format changed
+                option.textContent = `${program.course_code} - ${program.course_name}`;
                 courseDropdown.appendChild(option);
             });
         })
@@ -119,7 +180,7 @@ $(document).ready(function() {
         });
     });
 
-    // Show/hide custom gender field
+    // Custom gender field logic
     const customRadio = document.getElementById('custom');
     const customGenderField = document.getElementById('customGenderField');
 
@@ -135,7 +196,7 @@ $(document).ready(function() {
         });
     });
 
-    // Input mask for ID number
+    // ID number input mask
     $('#idNumber').inputmask("9999-9999", {
         placeholder: "YYYY-NNNN",
         showMaskOnHover: false,
@@ -145,9 +206,7 @@ $(document).ready(function() {
         }
     });
 
-    // Validate ID number and control submit button state
-    validateForm();
-
+    // Form validation logic
     function validateForm() {
         const submitBtn = document.getElementById('submitBtn');
         const idInput = document.getElementById('idNumber');
@@ -163,14 +222,12 @@ $(document).ready(function() {
             const isYearSelected = yearInput.value !== '';
             const isGenderSelected = Array.from(genderInputs).some(input => input.checked);
 
-            // Enable the button if all conditions are met
             submitBtn.disabled = !(isValidId && isFirstNameFilled && isLastNameFilled && isYearSelected && isGenderSelected);
         }
 
-        // ID validation on blur
         idInput.addEventListener('blur', function () {
             const fullId = this.value;
-            fetch(`/students/check_id`, {
+            fetch('/students/check_id', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -185,13 +242,11 @@ $(document).ready(function() {
             });
         });
 
-        // Add input listeners to recheck form on changes
         firstNameInput.addEventListener('input', checkFormValidity);
         lastNameInput.addEventListener('input', checkFormValidity);
         yearInput.addEventListener('change', checkFormValidity);
         genderInputs.forEach(input => input.addEventListener('change', checkFormValidity));
 
-        // ID number format validation on input
         idInput.addEventListener('input', function () {
             const value = idInput.value;
             const isFormatValid = /^\d{4}-\d{4}$/.test(value);
@@ -199,17 +254,18 @@ $(document).ready(function() {
             checkFormValidity();
         });
 
-        // Initial check in case of any pre-filled values
         checkFormValidity();
     }
 
-    // Handle edit modal logic
-    const editModal = document.getElementById('editModal');
+    validateForm();
 
+    // Edit modal logic
+    const editModal = document.getElementById('editModal');
+    
     editModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const studentId = button.getAttribute('data-id');
-
+    
         fetch(`/students/edit/${studentId}`)
             .then(response => response.json())
             .then(student => {
@@ -218,16 +274,46 @@ $(document).ready(function() {
                 document.getElementById('editLastName').value = student.last_name;
                 document.getElementById('editCourse').value = student.course || '';
                 document.getElementById('editYear').value = student.year_level;
+    
+                // Set the profile picture preview
+                const profilePreview = document.getElementById('editProfilePreview');
+                if (student.profile_picture_id) {
+                    const cloudinaryUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/c_fill,h_100,w_100/${student.profile_picture_id}`;
+                    profilePreview.src = cloudinaryUrl;
+                } else {
+                    profilePreview.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+                }
+    
+                // Handle gender selection
+                const genderRadios = document.getElementsByName('gender');
+                let foundMatchingGender = false;
 
-                const genderRadios = document.querySelectorAll('input[name="gender"]');
+                // First try to match with standard options (Male/Female)
                 genderRadios.forEach(radio => {
-                    radio.checked = radio.value === student.gender;
+                    if (radio.value === student.gender) {  // Simple direct comparison
+                        radio.checked = true;
+                        foundMatchingGender = true;
+                    } else {
+                        radio.checked = false;
+                    }
                 });
 
+                // If no standard gender matches, it must be a custom gender
+                const customRadio = document.getElementById('editCustom');
                 const customGenderField = document.getElementById('editCustomGenderField');
                 const customGenderInput = document.getElementById('editCustomGender');
-                if (student.gender !== 'Male' && student.gender !== 'Female') {
-                    document.getElementById('editCustom').checked = true;
+
+                if (!foundMatchingGender) {
+                    customRadio.checked = true;
+                    customGenderField.style.display = 'block';
+                    customGenderInput.value = student.gender;
+                } else {
+                    customGenderField.style.display = 'none';
+                    customGenderInput.value = '';
+                }
+
+                if (!foundMatchingGender) {
+                    customRadio.checked = true;
                     customGenderField.style.display = 'block';
                     customGenderInput.value = student.gender;
                 } else {
@@ -241,44 +327,164 @@ $(document).ready(function() {
             });
     });
 
+    // Edit form submit handler
     const editForm = document.getElementById('editForm');
-    editForm.addEventListener('submit', function (e) {
+    editForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const formData = new FormData(this);
-        const studentId = document.getElementById('editIdNumber').value;
+        console.log('Edit form submit started');
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        
+        try {
+            const formData = new FormData(this);
+            const fileInput = document.getElementById('editProfilePicture');
+            const file = fileInput.files[0];
+            const studentId = document.getElementById('editIdNumber').value;
+            
+            console.log('Form data:', {
+                hasFile: !!file,
+                studentId,
+                formFields: Array.from(formData.entries())
+            });
+            
+            if (file) {
+                console.log('Uploading file to Cloudinary...', {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type
+                });
+                const imageUrl = await uploadToCloudinary(file, studentId);
+                console.log('Got image URL:', imageUrl);
+                formData.set('profile_picture_id', imageUrl);
+            }
+            
+            console.log('Submitting to edit endpoint...');
+            const response = await fetch(`/students/edit/${studentId}`, {
+                method: 'POST',
+                body: formData
+            });
 
-        fetch(`/students/edit/${studentId}`, {
-            method: 'POST',
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+            const responseData = await response.json();
+            console.log('Edit response:', responseData);
+
+            if (responseData.success) {
                 const modal = bootstrap.Modal.getInstance(editModal);
                 modal.hide();
                 location.reload();
             } else {
-                alert(data.message || 'An error occurred while updating the student.');
+                throw new Error(responseData.message || 'Failed to update student');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the student.');
-        });
+        } catch (error) {
+            console.error('Update failed:', error);
+            alert('Failed to update student: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
     });
 
-    // Show/hide custom gender field in edit form
-    document.querySelectorAll('input[name="gender"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            const customGenderField = document.getElementById('editCustomGenderField');
-            const customGenderInput = document.getElementById('editCustomGender');
+    // Create form submit handler
+    const createForm = document.querySelector('#createModal form');
+    if (createForm) {
+        createForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(this);
+                const fileInput = document.getElementById('profilePicture');
+                const file = fileInput.files[0];
+                
+                if (file) {
+                    console.log('Uploading file to Cloudinary...');
+                    const imageUrl = await uploadToCloudinary(file);
+                    formData.set('profile_picture_id', imageUrl);
+                }
+
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create student');
+                }
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Submission failed:', error);
+                alert('Failed to create student: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // Image preview functionality
+    function initializeImagePreview(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        
+        if (!input || !preview) return;
+        
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File size must be less than 2MB');
+                input.value = '';
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Initialize image previews
+    initializeImagePreview('profilePicture', 'profilePreview');
+    initializeImagePreview('editProfilePicture', 'editProfilePreview');
+
+    // Edit modal gender field logic
+    const editCustomRadio = document.getElementById('editCustom');
+    const editCustomGenderField = document.getElementById('editCustomGenderField');
+
+    editCustomRadio.addEventListener('change', function () {
+        editCustomGenderField.style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Test Cloudinary configuration
+    async function testCloudinaryConfig() {
+        try {
+            const response = await fetch('/cloudinary/test_config');
+            const data = await response.json();
+            console.log('Cloudinary config test:', data);
+        } catch (error) {
+            console.error('Failed to test Cloudinary config:', error);
+        }
+    }
+    
+    testCloudinaryConfig();
+
+    document.querySelectorAll('#editModal input[name="gender"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const customField = document.getElementById('editCustomGenderField');
             if (this.id === 'editCustom') {
-                customGenderField.style.display = 'block';
-                customGenderInput.required = true;
+                customField.style.display = 'block';
             } else {
-                customGenderField.style.display = 'none';
-                customGenderInput.required = false;
-                customGenderInput.value = '';
+                customField.style.display = 'none';
+                document.getElementById('editCustomGender').value = '';
             }
         });
     });

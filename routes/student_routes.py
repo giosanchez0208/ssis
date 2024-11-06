@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, jsonify, url_for
+from flask import Blueprint, render_template, request, redirect, jsonify, url_for, current_app
 from models import db, StudentModel, ProgramModel
 from sqlalchemy.exc import IntegrityError
+import time
+import hashlib
 
 student_bp = Blueprint('student', __name__, url_prefix='/students')
 
@@ -11,9 +13,13 @@ def list_students():
             id_num = request.form['idNumber']
             first_name = request.form['firstName']
             last_name = request.form['lastName']
-            course = request.form['course']
+            course = request.form.get('course')
+            if course == 'none':
+                course = None 
             year_level = request.form['year']
             gender = request.form['gender']
+            # Get the profile picture public_id
+            profile_picture_id = request.form.get('profile_picture_id')
             
             if not all([id_num, first_name, last_name, year_level, gender]):
                 return render_template('students.html', 
@@ -33,7 +39,8 @@ def list_students():
                 last_name=last_name,
                 course=course,
                 gender=gender,
-                year_level=year_level
+                year_level=year_level,
+                profile_picture_id=profile_picture_id  # This will now store the public_id
             )
 
             db.session.add(new_student)
@@ -58,6 +65,7 @@ def list_students():
                          students=StudentModel.query.all(), 
                          programs=ProgramModel.query.all())
 
+
 # Add this new route for getting programs
 @student_bp.route('/get_programs', methods=['GET'])
 def get_programs():
@@ -75,7 +83,7 @@ def edit(id_num):
             form_data = request.form
             student.first_name = form_data['firstName']
             student.last_name = form_data['lastName']
-            student.course = form_data['course'] or None
+            student.course = form_data.get('course') or None
             student.year_level = form_data['year']
             student.gender = form_data['gender']
             
@@ -83,6 +91,11 @@ def edit(id_num):
                 custom_gender = form_data.get('customGender')
                 if custom_gender:
                     student.gender = custom_gender
+            
+            # Update profile picture if provided
+            profile_picture_id = form_data.get('profile_picture_id')
+            if profile_picture_id:
+                student.profile_picture_id = profile_picture_id
 
             db.session.commit()
             return jsonify({"success": True, "message": "Student updated successfully"})
@@ -96,7 +109,8 @@ def edit(id_num):
         'last_name': student.last_name,
         'course': student.course,
         'year_level': student.year_level,
-        'gender': student.gender
+        'gender': student.gender,
+        'profile_picture_id': student.profile_picture_id
     })
 
 @student_bp.route('/delete/<string:id_num>')
@@ -115,6 +129,7 @@ def check_id():
     exists = StudentModel.query.filter_by(id_num=id_num).first() is not None
     return jsonify({'exists': exists})
 
+# Flask route to fetch student data
 # Flask route to fetch student data
 @student_bp.route('/data', methods=['POST'])
 def get_student_data():
@@ -185,9 +200,18 @@ def get_student_data():
                 'last_name': student.last_name,
                 'year_level': student.year_level,
                 'course': student.course,
-                'gender': student.gender
+                'gender': student.gender,
+                'profile_picture_id': student.profile_picture_id  # Add this line
             } for student in students
         ]
     }
     
     return jsonify(data)
+
+@student_bp.route('/get_signature', methods=['POST'])
+def get_signature():
+    timestamp = request.json.get('timestamp')
+    signature = hashlib.sha1(
+        f'timestamp={timestamp}{current_app.config["CLOUDINARY_API_SECRET"]}'.encode()
+    ).hexdigest()
+    return jsonify({'signature': signature})
