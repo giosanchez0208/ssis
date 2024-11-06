@@ -46,5 +46,5 @@ class CollegeModel(db.Model):
         self.college_code = college_code
         self.college_name = college_name
 
-    def __repr__(self):
-        return f"{self.college_code} - {self.college_name}"
+        def __repr__(self):
+            return f"{self.college_code} - {self.college_name}"
