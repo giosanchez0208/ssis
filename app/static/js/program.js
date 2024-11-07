@@ -33,6 +33,7 @@ $(document).ready(function () {
     // Validate form on input change
     $('#createProgramForm input, #createProgramForm select').on('input change', validateCreateForm);
 
+    
     // Check for duplicate course code
     $('#courseCode').on('input', function() {
         const courseCode = $(this).val().trim();
@@ -53,8 +54,25 @@ $(document).ready(function () {
                 } else {
                     $('#courseCodeWarning').hide();
                 }
-                validateCreateForm();
+                validateCreateForm(); // Re-validate the form after checking for duplicates
             }
+        });
+    });
+    $('#courseCode, #editCourseCode').on('blur', function() {
+        const courseCode = $(this).val();
+        const warningElement = $(this).closest('.modal-body').find('#courseCodeWarning');
+        const submitButton = $(this).closest('form').find('button[type="submit"]');
+        
+        fetch(`/programs/check_course_code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ course_code: courseCode }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            const isDuplicate = data.exists;
+            warningElement.toggle(isDuplicate);
+            submitButton.prop('disabled', isDuplicate);
         });
     });
 
@@ -146,7 +164,6 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     $('#editModal').modal('hide');
-                    // Update the table row
                     const row = programTable.row($(`button[data-id="${originalCourseCode}"]`).closest('tr'));
                     const newData = [
                         courseCode,
@@ -190,7 +207,6 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.message === "Program deleted successfully") {
                     $('#deleteModal').modal('hide');
-                    // Remove the row from the DataTable
                     programTable.row($(`button[data-id="${courseCode}"]`).closest('tr')).remove().draw();
                 } else {
                     alert('Failed to delete program: ' + response.message);
@@ -198,24 +214,6 @@ $(document).ready(function () {
             },
             error: function (xhr, status, error) {
                 alert('An error occurred while deleting the program: ' + error);
-            }
-        });
-    });
-
-    // Check for duplicate course code
-    $('#courseCode').on('input', function() {
-        const courseCode = $(this).val();
-        $.ajax({
-            url: '/check_course_code',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ course_code: courseCode }),
-            success: function(response) {
-                if (response.exists) {
-                    $('#courseCodeWarning').show();
-                } else {
-                    $('#courseCodeWarning').hide();
-                }
             }
         });
     });

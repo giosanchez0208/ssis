@@ -133,6 +133,7 @@ env.bak/
 venv.bak/
 
 # Node.js modules
+bootstrap/
 node_modules/
 *.json
 
@@ -190,6 +191,9 @@ pyrightconfig.json
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Sample_icons
+/sample_icons
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
