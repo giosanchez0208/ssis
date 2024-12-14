@@ -41,7 +41,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     ENV = 'development'
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@localhost/ssis_db'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:guerrillaRdio@localhost/ssis_db'
     SESSION_COOKIE_SECURE = False  # Allow HTTP in development
 
 class TestingConfig(Config):
