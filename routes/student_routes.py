@@ -184,8 +184,8 @@ def check_id():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    cur.execute("SELECT EXISTS(SELECT 1 FROM students WHERE id_num = %s)", (id_num,))
-    exists = cur.fetchone()['exists']
+    cur.execute("SELECT EXISTS(SELECT 1 FROM students WHERE id_num = %s) as exists_check", (id_num,))
+    exists = cur.fetchone()['exists_check']
     
     cur.close()
     conn.close()

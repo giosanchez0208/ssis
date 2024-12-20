@@ -1,11 +1,10 @@
-from flask import Blueprint, request, jsonify
-import cloudinary.uploader
-import pymysql
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from flask import Blueprint, request, jsonify, current_app
+import pymysql
+import cloudinary
+import cloudinary.uploader
+import cloudinary.utils
+import logging
 
 cloudinary_bp = Blueprint('cloudinary', __name__, url_prefix='/cloudinary')
 
@@ -20,57 +19,110 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+@cloudinary_bp.route('/test_config', methods=['GET'])
+def test_config():
+    try:
+        return jsonify({
+            'cloud_name': current_app.config['CLOUDINARY_CLOUD_NAME'],
+            'api_key': current_app.config['CLOUDINARY_API_KEY'],
+            'api_secret': 'exists' if current_app.config['CLOUDINARY_API_SECRET'] else 'missing'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @cloudinary_bp.route('/upload', methods=['POST'])
 def upload_image():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    try:
-        upload_result = cloudinary.uploader.upload(file)
-        url = upload_result.get('url')
-        public_id = upload_result.get('public_id')
-
-        connection = get_db_connection()
-        try:
-            with connection.cursor() as cursor:
-                sql = "INSERT INTO images (url, public_id) VALUES (%s, %s)"
-                cursor.execute(sql, (url, public_id))
-            connection.commit()
-            return jsonify({'url': url, 'public_id': public_id}), 201
-        except pymysql.MySQLError as e:
-            connection.rollback()
-            return jsonify({'error': str(e)}), 400
-        finally:
-            connection.close()
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@cloudinary_bp.route('/delete', methods=['POST'])
-def delete_image():
-    data = request.get_json()
-    public_id = data.get('public_id')
-
-    if not public_id:
-        return jsonify({'error': 'No public_id provided'}), 400
+    if 'image' not in request.files:
+        return jsonify({
+            'success': False,
+            'error': 'No image file provided'
+        }), 400
+        
+    file = request.files['image']
+    if not file:
+        return jsonify({
+            'success': False,
+            'error': 'Empty file'
+        }), 400
 
     try:
-        cloudinary.uploader.destroy(public_id)
-
-        connection = get_db_connection()
-        try:
-            with connection.cursor() as cursor:
-                sql = "DELETE FROM images WHERE public_id = %s"
-                cursor.execute(sql, (public_id,))
-            connection.commit()
-            return jsonify({'success': True}), 200
-        except pymysql.MySQLError as e:
-            connection.rollback()
-            return jsonify({'error': str(e)}), 400
-        finally:
-            connection.close()
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder='student_profiles',
+            allowed_formats=['jpg', 'png', 'jpeg'],
+            transformation=[
+                {'width': 200, 'height': 200, 'crop': 'fill'},
+                {'quality': 'auto'}
+            ]
+        )
+        
+        return jsonify({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@cloudinary_bp.route('/update', methods=['POST'])
+def update_image():
+    if 'image' not in request.files or 'student_id' not in request.form:
+        return jsonify({
+            'success': False,
+            'error': 'Missing required fields'
+        }), 400
+        
+    file = request.files['image']
+    student_id = request.form['student_id']
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT profile_picture_id FROM students WHERE id_num = %s', (student_id,))
+        student = cursor.fetchone()
+        
+        if not student:
+            return jsonify({
+                'success': False,
+                'error': 'Student not found'
+            }), 404
+            
+        if student['profile_picture_id']:
+            try:
+                cloudinary.uploader.destroy(student['profile_picture_id'])
+            except Exception as e:
+                print(f"Error deleting old image: {str(e)}")
+                
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder='student_profiles',
+            allowed_formats=['jpg', 'png', 'jpeg'],
+            transformation=[
+                {'width': 200, 'height': 200, 'crop': 'fill'},
+                {'quality': 'auto'}
+            ]
+        )
+        
+        cursor.execute('UPDATE students SET profile_picture_id = %s WHERE id_num = %s', 
+                      (upload_result['public_id'], student_id))
+        conn.commit()
+        
+        return jsonify({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()
