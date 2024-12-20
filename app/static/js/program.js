@@ -30,15 +30,22 @@ $(document).ready(function () {
         const courseName = $('#courseName').val().trim();
         const college = $('#college').val();
         const hasDuplicate = $('#courseCodeWarning').is(':visible');
+        const isTooLong = courseCode.length > 16;
 
-        const isValid = courseCode !== '' && courseName !== '' && college !== '' && !hasDuplicate;
+        // Show warning if course code is too long
+        if (isTooLong) {
+            $('#courseCodeLengthWarning').show();
+        } else {
+            $('#courseCodeLengthWarning').hide();
+        }
+
+        const isValid = courseCode !== '' && courseName !== '' && college !== '' && !hasDuplicate && !isTooLong;
         $('#createProgramBtn').prop('disabled', !isValid);
     }
 
     // Validate form on input change
     $('#createProgramForm input, #createProgramForm select').on('input change', validateCreateForm);
 
-    
     // Check for duplicate course code
     $('#courseCode').on('input', function() {
         const courseCode = $(this).val().trim();
@@ -49,7 +56,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: '/check_course_code',
+            url: '/programs/check_course_code',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ course_code: courseCode }),
@@ -63,23 +70,6 @@ $(document).ready(function () {
             }
         });
     });
-    $('#courseCode, #editCourseCode').on('blur', function() {
-        const courseCode = $(this).val();
-        const warningElement = $(this).closest('.modal-body').find('#courseCodeWarning');
-        const submitButton = $(this).closest('form').find('button[type="submit"]');
-        
-        fetch(`/programs/check_course_code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ course_code: courseCode }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            const isDuplicate = data.exists;
-            warningElement.toggle(isDuplicate);
-            submitButton.prop('disabled', isDuplicate);
-        });
-    });
 
     // Create program functionality
     $('#createProgramForm').submit(function(e) {
@@ -87,6 +77,8 @@ $(document).ready(function () {
         const courseCode = $('#courseCode').val().trim();
         const courseName = $('#courseName').val().trim();
         const college = $('#college').val();
+
+        console.log(`Submitting form data: courseCode=${courseCode}, courseName=${courseName}, college=${college}`);
 
         $.ajax({
             url: '/programs',
@@ -97,10 +89,12 @@ $(document).ready(function () {
                 college: college
             },
             success: function(response) {
+                console.log('Program added successfully');
                 $('#createModal').modal('hide');
                 location.reload();  // Reload the page to show the new program
             },
             error: function(xhr) {
+                console.error('Error adding program:', xhr);
                 if (xhr.status === 400) {
                     $('#courseCodeWarning').show();
                     validateCreateForm();
@@ -174,6 +168,9 @@ $(document).ready(function () {
                         courseCode,
                         courseName,
                         college,
+                        `<button class="btn btn-info btn-sm info-btn" data-bs-toggle="modal" data-bs-target="#infoModal" data-id="${courseCode}" data-name="${courseName}" data-college="${college}">
+                            <i class="fas fa-solid fa-info p-1" style="color: white;"></i>
+                        </button>`,
                         `<button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editModal" data-id="${courseCode}" data-name="${courseName}" data-college="${college}">
                             <i class="fas fa-edit p-1"></i>
                         </button>`,
@@ -197,49 +194,63 @@ $(document).ready(function () {
         const courseCode = $(this).data('id');
         const courseName = $(this).data('name');
 
-        $('#programName').text(courseName);
-        $('#programId').text(courseCode);
-        $('#deleteModal').modal('show');
+        console.log(`Setting courseCode to: ${courseCode}`);
+        
+        // Set the course code in the hidden input
+        $('#programId').val(courseCode);
 
         // Fetch enrolled students
         $.ajax({
             url: `/programs/${courseCode}/students`,
             method: 'GET',
             success: function (response) {
-            const students = response.students;
-            const formattedStudentList = students.map(student => `<div>${student.name}</div>`).join('');
-            $('#deleteModal .modal-body').html(`
-                <p>Deleting <strong>${courseName} (${courseCode})</strong> will also unenroll the following students (${students.length} total):</p>
-                ${formattedStudentList}
-                </br>
-                <p><strong>Proceed?</strong></p>
-            `).css('margin-top', '20px');
+                const students = response.students;
+                const formattedStudentList = students.map(student => `<div>${student.name}</div>`).join('');
+                $('#deleteModalContent').html(`
+                    <p>Are you sure you want to delete the program <strong>${courseName}</strong> (${courseCode})?</p>
+                    <p>Deleting <strong>${courseName} (${courseCode})</strong> will also unenroll the following students (${students.length} total):</p>
+                    ${formattedStudentList}
+                    </br>
+                    <p><strong>Proceed?</strong></p>
+                `);
+                $('#deleteModal').modal('show');
             },
             error: function(xhr, status, error) {
                 console.error('Error fetching students:', error);
-                $('#deleteModal .modal-body').html(`
+                $('#deleteModalContent').html(`
                     <p class="text-danger">Error loading students</p>
                 `);
+                $('#deleteModal').modal('show');
             }
         });
     });
 
     // Confirm delete
     $('#confirmDeleteBtn').click(function () {
-        const courseCode = $('#programId').text();
+        const courseCode = $('#programId').val();
+        console.log(`Attempting to delete program with courseCode: ${courseCode}`);
+
+        if (!courseCode) {
+            console.error('Course code is empty. Cannot delete program.');
+            alert('Error: Course code is empty. Cannot delete program.');
+            return;
+        }
 
         $.ajax({
             url: `/programs/delete/${courseCode}`,
             method: 'DELETE',
             success: function (response) {
-                if (response.message === "Program deleted successfully") {
+                if (response.success) {
+                    console.log(`Program with courseCode ${courseCode} deleted successfully`);
                     $('#deleteModal').modal('hide');
+                    // Refresh the DataTable
                     programTable.row($(`button[data-id="${courseCode}"]`).closest('tr')).remove().draw();
                 } else {
-                    alert('Failed to delete program: ' + response.message);
+                    alert('Failed to delete program: ' + response.error);
                 }
             },
             error: function (xhr, status, error) {
+                console.error(`Error deleting program with courseCode ${courseCode}: ${error}`);
                 alert('An error occurred while deleting the program: ' + error);
             }
         });

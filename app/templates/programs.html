@@ -87,9 +87,9 @@
                     <form id="createProgramForm">
                         <div class="mb-3">
                             <label for="courseCode" class="form-label">Course Code</label>
-                            <input type="text" class="form-control" id="courseCode" name="courseCode" required>
-                            <small id="courseCodeWarning" class="text-danger" style="display: none;">This course code
-                                already exists.</small>
+                            <input type="text" class="form-control" id="courseCode" name="courseCode" maxlength="16" required>
+                            <small id="courseCodeWarning" class="text-danger" style="display: none;">This course code already exists.</small>
+                            <small id="courseCodeLengthWarning" class="text-danger" style="display: none;">Course code too long.</small>
                         </div>
                         <div class="mb-3">
                             <label for="courseName" class="form-label">Course Name</label>
@@ -162,9 +162,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete the program <strong><span id="programName"></span></strong>
-                        (<span id="programId"></span>)?</p>
-                    <p>Deleting this program will unenroll all students currently enrolled in this course.</p>
+                    <!-- Store course code in a hidden input -->
+                    <input type="hidden" id="programId" name="programId">
+                    <div id="deleteModalContent">
+                        <!-- Content will be dynamically updated -->
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
