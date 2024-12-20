@@ -1,10 +1,44 @@
+import pymysql
 from flask import Blueprint, render_template, request, redirect, jsonify, url_for, current_app
-from models import db, StudentModel, ProgramModel
-from sqlalchemy.exc import IntegrityError
-import time
-import hashlib
-
+import os
+from urllib.parse import urlparse
+def get_db_connection():
+    try:
+        url = os.getenv('DATABASE_URL', 'mysql+pymysql://root@localhost/studentdb')
+        parsed_url = urlparse(url)
+        
+        conn = pymysql.connect(
+            host=parsed_url.hostname,
+            database=parsed_url.path.strip('/'),
+            user=parsed_url.username,
+            password=parsed_url.password,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        return conn
+    except (Exception, pymysql.err.Error) as error:
+        current_app.logger.error(f"Database connection failed: {error}")
+        
+        
 student_bp = Blueprint('student', __name__, url_prefix='/students')
+
+def list_students():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template('students.html', error_message="Failed to connect to the database.")
+    
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM students")
+        students = cur.fetchall()
+        cur.execute("SELECT course_code, course_name FROM programs")
+        programs = cur.fetchall()
+        cur.close()
+        conn.close()
+        return render_template('students.html', students=students, programs=programs)
+    except Exception as e:
+        current_app.logger.error(f"Database operation failed: {e}")
+        return render_template('students.html', error_message=f"An error occurred: {str(e)}")
+
 
 @student_bp.route('/', methods=['GET', 'POST'])
 def list_students():
@@ -14,204 +48,213 @@ def list_students():
             first_name = request.form['firstName']
             last_name = request.form['lastName']
             course = request.form.get('course')
-            if course == 'none':
-                course = None 
             year_level = request.form['year']
             gender = request.form['gender']
-            # Get the profile picture public_id
             profile_picture_id = request.form.get('profile_picture_id')
-            
+
             if not all([id_num, first_name, last_name, year_level, gender]):
-                return render_template('students.html', 
-                                    students=StudentModel.query.all(),
-                                    programs=ProgramModel.query.all(),
-                                    error_message="Please fill out all required fields.")
+                conn = get_db_connection()
+                cur = conn.cursor(pymysql.cursors.DictCursor)
+                cur.execute("SELECT * FROM students")
+                students = cur.fetchall()
+                cur.execute("SELECT course_code, course_name FROM programs")
+                programs = cur.fetchall()
+                cur.close()
+                conn.close()
+                return render_template('students.html', students=students, programs=programs, error_message="Please fill out all required fields.")
 
             if gender == "Custom":
                 custom_gender = request.form.get('customGender')
                 gender = custom_gender if custom_gender else gender
-                    
-            course = course if course else None
 
-            new_student = StudentModel(
-                id_num=id_num,
-                first_name=first_name,
-                last_name=last_name,
-                course=course,
-                gender=gender,
-                year_level=year_level,
-                profile_picture_id=profile_picture_id  # This will now store the public_id
-            )
-
-            db.session.add(new_student)
+            conn = get_db_connection()
+            cur = conn.cursor(pymysql.cursors.DictCursor)
+            
             try:
-                db.session.commit()
+                cur.execute("""
+                    INSERT INTO students 
+                    (id_num, first_name, last_name, course, year_level, gender, profile_picture_id) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (id_num, first_name, last_name, course, year_level, gender, profile_picture_id))
+                conn.commit()
+                cur.close()
+                conn.close()
                 return redirect(url_for('student.list_students'))
-            except IntegrityError:
-                db.session.rollback()
-                return render_template('students.html', 
-                                    students=StudentModel.query.all(),
-                                    programs=ProgramModel.query.all(),
-                                    error_message="ID Number already exists.")
+            
+            except pymysql.err.IntegrityError:
+                conn.rollback()
+                cur.close()
+                conn.close()
+                return render_template('students.html', error_message="ID Number already exists.")
 
         except Exception as e:
-            db.session.rollback()
-            return render_template('students.html', 
-                                students=StudentModel.query.all(),
-                                programs=ProgramModel.query.all(),
-                                error_message=f"An error occurred: {str(e)}")
+            return render_template('students.html', error_message=f"An error occurred: {str(e)}")
 
-    return render_template('students.html', 
-                         students=StudentModel.query.all(), 
-                         programs=ProgramModel.query.all())
+    conn = get_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+    cur.execute("SELECT * FROM students")
+    students = cur.fetchall()
+    cur.execute("SELECT course_code, course_name FROM programs")
+    programs = cur.fetchall()
+    cur.close()
+    conn.close()
 
+    return render_template('students.html', students=students, programs=programs)
 
-# Add this new route for getting programs
 @student_bp.route('/get_programs', methods=['GET'])
 def get_programs():
-    programs = ProgramModel.query.all()
-    return jsonify([{
-        'course_code': program.course_code,
-        'course_name': program.course_name
-    } for program in programs])
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT course_code, course_name FROM programs")
+    programs = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(programs)
 
 @student_bp.route('/edit/<string:id_num>', methods=['GET', 'POST'])
 def edit(id_num):
-    student = StudentModel.query.get_or_404(id_num)
+    conn = get_db_connection()
+    cur = conn.cursor()
+
     if request.method == 'POST':
         try:
             form_data = request.form
-            student.first_name = form_data['firstName']
-            student.last_name = form_data['lastName']
-            student.course = form_data.get('course') or None
-            student.year_level = form_data['year']
-            student.gender = form_data['gender']
-            
-            if student.gender == "Custom":
-                custom_gender = form_data.get('customGender')
-                if custom_gender:
-                    student.gender = custom_gender
-            
-            # Update profile picture if provided
-            profile_picture_id = form_data.get('profile_picture_id')
-            if profile_picture_id:
-                student.profile_picture_id = profile_picture_id
-
-            db.session.commit()
+            cur.execute("""
+                UPDATE students 
+                SET first_name = %s, 
+                    last_name = %s, 
+                    course = %s, 
+                    year_level = %s, 
+                    gender = %s, 
+                    profile_picture_id = %s
+                WHERE id_num = %s
+            """, (
+                form_data['firstName'], 
+                form_data['lastName'], 
+                form_data.get('course'),
+                form_data['year'], 
+                form_data['gender'], 
+                form_data.get('profile_picture_id'),
+                id_num
+            ))
+            conn.commit()
+            cur.close()
+            conn.close()
             return jsonify({"success": True, "message": "Student updated successfully"})
+        
         except Exception as e:
-            db.session.rollback()
+            conn.rollback()
+            cur.close()
+            conn.close()
             return jsonify({"success": False, "message": f"Update failed: {str(e)}"})
-    
-    return jsonify({
-        'id_num': student.id_num,
-        'first_name': student.first_name,
-        'last_name': student.last_name,
-        'course': student.course,
-        'year_level': student.year_level,
-        'gender': student.gender,
-        'profile_picture_id': student.profile_picture_id
-    })
+
+    cur.execute("SELECT * FROM students WHERE id_num = %s", (id_num,))
+    student = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    return jsonify(student)
 
 @student_bp.route('/delete/<string:id_num>')
 def delete(id_num):
-    student = StudentModel.query.get_or_404(id_num)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
     try:
-        db.session.delete(student)
-        db.session.commit()
+        cur.execute("DELETE FROM students WHERE id_num = %s", (id_num,))
+        conn.commit()
+        cur.close()
+        conn.close()
         return redirect(url_for('student.list_students'))
+    
     except Exception as e:
-        return f"Error deleting student: {str(e)}"
+        cur.close()
+        conn.close()
+        return "Error"
 
 @student_bp.route('/check_id', methods=['POST'])
 def check_id():
     id_num = request.json['id_num']
-    exists = StudentModel.query.filter_by(id_num=id_num).first() is not None
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT EXISTS(SELECT 1 FROM students WHERE id_num = %s)", (id_num,))
+    exists = cur.fetchone()['exists']
+    
+    cur.close()
+    conn.close()
+    
     return jsonify({'exists': exists})
 
-# Flask route to fetch student data
-# Flask route to fetch student data
 @student_bp.route('/data', methods=['POST'])
 def get_student_data():
-    # Get the paging and sorting parameters from the request
+    # pagination
     start = int(request.form['start'])
     length = int(request.form['length'])
+    # filter results
     search_value = request.form.get('search[value]', '')
-    order_column = int(request.form.get('order[0][column]', 0))
+    # sorting
+    order_column = request.form.get('order[0][column]', '0')
     order_dir = request.form.get('order[0][dir]', 'asc')
+    # filter by course
     course_filter = request.form.get('courseFilter', '')
 
-    # Base query
-    query = StudentModel.query
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    # Apply course filter if selected
+    # base query
+    query = """
+        SELECT * FROM students 
+        WHERE 1=1
+    """
+    params = []
+
+    # course query filter
     if course_filter:
-        query = query.filter(StudentModel.course == course_filter)
+        query += " AND course = %s"
+        params.append(course_filter)
 
-    # Apply search filter if search value exists
+    # search value query filter
     if search_value:
         search_term = f"%{search_value}%"
-        query = query.filter(
-            db.or_(
-                StudentModel.id_num.like(search_term),
-                StudentModel.first_name.like(search_term),
-                StudentModel.last_name.like(search_term),
-                StudentModel.course.like(search_term),
-                StudentModel.gender.like(search_term)
+        query += """ 
+            AND (
+                id_num LIKE %s OR 
+                first_name LIKE %s OR 
+                last_name LIKE %s OR 
+                course LIKE %s OR 
+                gender LIKE %s
             )
-        )
+        """
+        params.extend([search_term] * 5)
 
-    # Define column mapping for sorting
-    column_mapping = {
-        0: None,  # Profile picture column - not sortable
-        1: StudentModel.id_num,
-        2: StudentModel.last_name,  # Sort by last name for the full name column
-        3: StudentModel.year_level,
-        4: StudentModel.course,
-        5: StudentModel.gender,
-        6: None,  # Edit button - not sortable
-        7: None   # Delete button - not sortable
-    }
+    # order by
+    columns = [None, 'id_num', 'last_name', 'year_level', 'course', 'gender']
+    if order_column and int(order_column) < len(columns) and columns[int(order_column)] is not None:
+        sort_column = columns[int(order_column)]
+        query += f" ORDER BY {sort_column} {order_dir.upper()}"
+        
+    
+    cur.execute("SELECT COUNT(*) FROM students")
+    total_records = cur.fetchone()['COUNT(*)']
 
-    # Apply sorting
-    if order_column in column_mapping and column_mapping[order_column] is not None:
-        sort_column = column_mapping[order_column]
-        if order_dir == 'desc':
-            query = query.order_by(sort_column.desc())
-        else:
-            query = query.order_by(sort_column.asc())
+    count_query = query.replace("*", "COUNT(*)")
+    cur.execute(count_query, params)
+    filtered_records = cur.fetchone()['COUNT(*)']
 
-    # Get total records before pagination
-    total_records = StudentModel.query.count()
-    filtered_records = query.count()
+    query += " LIMIT %s OFFSET %s"
+    params.extend([length, start])
 
-    # Apply pagination
-    students = query.offset(start).limit(length).all()
+    cur.execute(query, params)
+    students = cur.fetchall()
 
-    # Prepare the response data
+    cur.close()
+    conn.close()
     data = {
         'draw': int(request.form['draw']),
         'recordsTotal': total_records,
         'recordsFiltered': filtered_records,
-        'data': [
-            {
-                'id_num': student.id_num,
-                'first_name': student.first_name,
-                'last_name': student.last_name,
-                'year_level': student.year_level,
-                'course': student.course,
-                'gender': student.gender,
-                'profile_picture_id': student.profile_picture_id  # Add this line
-            } for student in students
-        ]
+        'data': students
     }
     
     return jsonify(data)
-
-@student_bp.route('/get_signature', methods=['POST'])
-def get_signature():
-    timestamp = request.json.get('timestamp')
-    signature = hashlib.sha1(
-        f'timestamp={timestamp}{current_app.config["CLOUDINARY_API_SECRET"]}'.encode()
-    ).hexdigest()
-    return jsonify({'signature': signature})

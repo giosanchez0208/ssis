@@ -131,7 +131,6 @@ $(document).ready(function() {
                 throw new Error(data.error || 'Upload failed');
             }
             
-            // Return the public_id instead of the URL
             return data.public_id;
         } catch (error) {
             console.error('Upload error:', error);
@@ -139,7 +138,7 @@ $(document).ready(function() {
         }
     }
     
-    // Fetch and populate programs dropdown
+    // fetch and populate programs dropdown
     fetch('/students/get_programs')
         .then(response => response.json())
         .then(programs => {
@@ -147,13 +146,13 @@ $(document).ready(function() {
             const courseDropdown = document.getElementById("course");
             courseDropdown.innerHTML = "";
 
-            // Add the "Not enrolled in any program" option first
+            // add the "Not enrolled in any program" option first
             const defaultOption = document.createElement("option");
             defaultOption.value = "none";
             defaultOption.textContent = "Not enrolled in any program";
             courseDropdown.appendChild(defaultOption);
 
-            // Add all other programs
+            // add all other programs
             programs.forEach(program => {
                 const option = document.createElement("option");
                 option.value = program.course_code;
@@ -165,7 +164,7 @@ $(document).ready(function() {
             console.error('Error fetching programs:', error);
         });
 
-    // Delete modal logic
+    // delete modal logic
     $('#deleteModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget);
         var studentName = button.data('student-name');
@@ -180,7 +179,7 @@ $(document).ready(function() {
         });
     });
 
-    // Custom gender field logic
+    // custom gender field logic
     const customRadio = document.getElementById('custom');
     const customGenderField = document.getElementById('customGenderField');
 
@@ -206,7 +205,7 @@ $(document).ready(function() {
         }
     });
 
-    // Form validation logic
+    // form validation logic
     function validateForm() {
         const submitBtn = document.getElementById('submitBtn');
         const idInput = document.getElementById('idNumber');
@@ -290,7 +289,7 @@ $(document).ready(function() {
 
                 // First try to match with standard options (Male/Female)
                 genderRadios.forEach(radio => {
-                    if (radio.value === student.gender) {  // Simple direct comparison
+                    if (radio.value === student.gender) { 
                         radio.checked = true;
                         foundMatchingGender = true;
                     } else {
@@ -474,7 +473,6 @@ $(document).ready(function() {
             console.error('Failed to test Cloudinary config:', error);
         }
     }
-    
     testCloudinaryConfig();
 
     document.querySelectorAll('#editModal input[name="gender"]').forEach(radio => {
