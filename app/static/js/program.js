@@ -263,7 +263,8 @@ $(document).ready(function () {
             method: 'GET',
             success: function (response) {
                 const students = response.students;
-                
+                const yearLevels = response.year_levels;
+
                 // Container for student count and "See enrolled" link
                 const enrollmentContainer = $('<div>').addClass('d-flex align-items-center gap-2');
                 
@@ -284,6 +285,9 @@ $(document).ready(function () {
                 }
                 
                 $('#infoEnrolledStudents').append(enrollmentContainer);
+
+                // Display pie chart
+                displayYearLevelPieChart(yearLevels);
             },
             error: function(xhr, status, error) {
                 console.error('Error fetching students:', error);
@@ -292,6 +296,8 @@ $(document).ready(function () {
                 );
             }
         });
+
+        $('#infoModal').modal('show');
     });
 
     function showStudentList(students) {
@@ -335,6 +341,65 @@ $(document).ready(function () {
         // Hide the "See enrolled" link and append the student list
         $('.see-enrolled-link').hide();
         $('#infoEnrolledStudents').append(studentListContainer);
+    }
+
+    // pie chart
+    let yearLevelPieChart;
+
+    function displayYearLevelPieChart(yearLevels) {
+        const ctx = document.getElementById('yearLevelPieChart').getContext('2d');
+        const labels = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
+        const data = [
+            yearLevels.first_year,
+            yearLevels.second_year,
+            yearLevels.third_year,
+            yearLevels.fourth_year
+        ];
+
+        // reset pie chart
+        if (yearLevelPieChart) {
+            yearLevelPieChart.destroy();
+        }
+
+        yearLevelPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value} students`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 });
 

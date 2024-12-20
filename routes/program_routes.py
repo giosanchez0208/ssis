@@ -95,14 +95,22 @@ def get_enrolled_students(course_code):
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
             sql = """
-                SELECT s.id_num, CONCAT(UPPER(s.last_name), ', ', s.first_name) as name
+                SELECT s.id_num, CONCAT(UPPER(s.last_name), ', ', s.first_name) as name, s.year_level
                 FROM students s
                 WHERE s.course = %s
                 ORDER BY s.last_name, s.first_name
             """
             cursor.execute(sql, (course_code,))
             students = cursor.fetchall()
-        return jsonify({'students': students})
+
+            year_levels = {
+                'first_year': sum(1 for student in students if student['year_level'] == 1),
+                'second_year': sum(1 for student in students if student['year_level'] == 2),
+                'third_year': sum(1 for student in students if student['year_level'] == 3),
+                'fourth_year': sum(1 for student in students if student['year_level'] == 4)
+            }
+
+        return jsonify({'students': students, 'year_levels': year_levels})
     except pymysql.MySQLError as e:
         return jsonify({'error': str(e)})
     finally:

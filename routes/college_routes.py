@@ -94,3 +94,34 @@ def delete_college():
         return jsonify({'error': str(e)}), 400
     finally:
         connection.close()
+
+@college_bp.route('/<college_code>/info', methods=['GET'])
+def get_college_info(college_code):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.course_code, p.course_name, COUNT(s.id_num) AS student_count
+                FROM programs p
+                LEFT JOIN students s ON p.course_code = s.course
+                WHERE p.college = %s
+                GROUP BY p.course_code, p.course_name
+            """, (college_code,))
+            courses = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT COUNT(s.id_num) AS total_students
+                FROM students s
+                JOIN programs p ON s.course = p.course_code
+                WHERE p.college = %s
+            """, (college_code,))
+            total_students = cursor.fetchone()['total_students']
+
+        return jsonify({
+            'courses': courses,
+            'total_students': total_students
+        })
+    except pymysql.MySQLError as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
