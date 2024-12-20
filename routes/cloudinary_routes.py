@@ -1,16 +1,33 @@
-import os
-from flask import Blueprint, request, jsonify, current_app
-from models import db, StudentModel
+from psycopg2.extras import RealDictCursor
+from flask import Blueprint, request, jsonify, current_app, url_for
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
-import logging
+import pymysql
+import os
+from urllib.parse import urlparse
+
+def get_db_connection():
+    try:
+        url = os.getenv('DATABASE_URL', 'mysql+pymysql://root@localhost/studentdb')
+        parsed_url = urlparse(url)
+        
+        conn = pymysql.connect(
+            host=parsed_url.hostname,
+            database=parsed_url.path.strip('/'),
+            user=parsed_url.username,
+            password=parsed_url.password,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        return conn
+    except (Exception, pymysql.err.Error) as error:
+        current_app.logger.error(f"Database connection failed: {error}")
+
 
 cloudinary_bp = Blueprint('cloudinary', __name__, url_prefix='/cloudinary')
 
 @cloudinary_bp.route('/test_config', methods=['GET'])
 def test_config():
-    """Test route to verify Cloudinary configuration"""
     try:
         return jsonify({
             'cloud_name': current_app.config['CLOUDINARY_CLOUD_NAME'],
@@ -22,11 +39,7 @@ def test_config():
 
 @cloudinary_bp.route('/upload', methods=['POST'])
 def upload_image():
-    """Upload a new image to Cloudinary"""
-    print("Upload route hit")  # Debug print
-    
     if 'image' not in request.files:
-        print("No image file in request")  # Debug print
         return jsonify({
             'success': False,
             'error': 'No image file provided'
@@ -38,9 +51,8 @@ def upload_image():
             'success': False,
             'error': 'Empty file'
         }), 400
-
+    
     try:
-        print("Attempting Cloudinary upload")  # Debug print
         upload_result = cloudinary.uploader.upload(
             file,
             folder='student_profiles',
@@ -50,15 +62,33 @@ def upload_image():
                 {'quality': 'auto'}
             ]
         )
-        print(f"Upload successful: {upload_result}")  # Debug print
         
-        return jsonify({
-            'success': True,
-            'url': upload_result['secure_url'],
-            'public_id': upload_result['public_id']
-        })
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            insert_sql = "INSERT INTO image_uploads (public_id, secure_url) VALUES (%s, %s) RETURNING id"
+            cursor.execute(insert_sql, (upload_result['public_id'], upload_result['secure_url']))
+            image_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'url': upload_result['secure_url'],
+                'public_id': upload_result['public_id'],
+                'image_id': image_id
+            })
+        except Exception as db_error:
+            conn.rollback()
+            return jsonify({
+                'success': False,
+                'error': str(db_error)
+            }), 500
+        finally:
+            cursor.close()
+            conn.close()
+        
     except Exception as e:
-        print(f"Upload failed with error: {str(e)}")  # Debug print
         return jsonify({
             'success': False,
             'error': str(e)
@@ -66,9 +96,6 @@ def upload_image():
 
 @cloudinary_bp.route('/update', methods=['POST'])
 def update_image():
-    """Update an existing image"""
-    print("Update route hit")  # Debug print
-    
     if 'image' not in request.files or 'student_id' not in request.form:
         return jsonify({
             'success': False,
@@ -78,24 +105,27 @@ def update_image():
     file = request.files['image']
     student_id = request.form['student_id']
     
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
     try:
-        # Get the student
-        student = StudentModel.query.get(student_id)
+        cursor.execute("SELECT profile_picture_id FROM students WHERE id = %s", (student_id,))
+        student = cursor.fetchone()
+        
         if not student:
             return jsonify({
                 'success': False,
                 'error': 'Student not found'
             }), 404
-            
-        # If there's an existing image, delete it
-        if student.profile_picture_id:
+        
+        old_picture_id = student['profile_picture_id']
+        
+        if old_picture_id:
             try:
-                cloudinary.uploader.destroy(student.profile_picture_id)
-            except Exception as e:
-                print(f"Error deleting old image: {str(e)}")  # Debug print
-                
-        # Upload new image
-        print("Attempting Cloudinary upload for update")  # Debug print
+                cloudinary.uploader.destroy(old_picture_id)
+            except Exception as cloudinary_error:
+                print(f"Error deleting old image: {str(cloudinary_error)}")
+        
         upload_result = cloudinary.uploader.upload(
             file,
             folder='student_profiles',
@@ -105,7 +135,18 @@ def update_image():
                 {'quality': 'auto'}
             ]
         )
-        print(f"Update upload successful: {upload_result}")  # Debug print
+        
+        update_sql = """
+        UPDATE students 
+        SET profile_picture_url = %s, profile_picture_id = %s 
+        WHERE id = %s
+        """
+        cursor.execute(update_sql, (
+            upload_result['secure_url'], 
+            upload_result['public_id'], 
+            student_id
+        ))
+        conn.commit()
         
         return jsonify({
             'success': True,
@@ -113,8 +154,11 @@ def update_image():
             'public_id': upload_result['public_id']
         })
     except Exception as e:
-        print(f"Update failed with error: {str(e)}")  # Debug print
+        conn.rollback()
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+    finally:
+        cursor.close()
+        conn.close()
