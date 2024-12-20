@@ -200,6 +200,28 @@ $(document).ready(function () {
         $('#programName').text(courseName);
         $('#programId').text(courseCode);
         $('#deleteModal').modal('show');
+
+        // Fetch enrolled students
+        $.ajax({
+            url: `/programs/${courseCode}/students`,
+            method: 'GET',
+            success: function (response) {
+            const students = response.students;
+            const formattedStudentList = students.map(student => `<div>${student.name}</div>`).join('');
+            $('#deleteModal .modal-body').html(`
+                <p>Deleting <strong>${courseName} (${courseCode})</strong> will also unenroll the following students (${students.length} total):</p>
+                ${formattedStudentList}
+                </br>
+                <p><strong>Proceed?</strong></p>
+            `).css('margin-top', '20px');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching students:', error);
+                $('#deleteModal .modal-body').html(`
+                    <p class="text-danger">Error loading students</p>
+                `);
+            }
+        });
     });
 
     // Confirm delete
