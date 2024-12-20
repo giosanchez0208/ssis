@@ -88,3 +88,22 @@ def delete_program(course_code):
         return jsonify({'success': False, 'error': str(e)})
     finally:
         connection.close()
+        
+@program_bp.route('/<string:course_code>/students', methods=['GET'])
+def get_enrolled_students(course_code):
+    connection = get_db_connection()
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+                SELECT s.id_num, CONCAT(UPPER(s.last_name), ', ', s.first_name) as name
+                FROM students s
+                WHERE s.course = %s
+                ORDER BY s.last_name, s.first_name
+            """
+            cursor.execute(sql, (course_code,))
+            students = cursor.fetchall()
+        return jsonify({'students': students})
+    except pymysql.MySQLError as e:
+        return jsonify({'error': str(e)})
+    finally:
+        connection.close()

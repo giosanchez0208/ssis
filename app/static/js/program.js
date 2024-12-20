@@ -1,7 +1,12 @@
 $(document).ready(function () {
     // Initialize DataTable
     const programTable = $('#program_table').DataTable({
-        columnDefs: [{
+        columnDefs: [
+            {
+                orderable: false,
+                targets: [-3]
+            },
+            {
                 orderable: false,
                 targets: [-2]
             },
@@ -217,4 +222,97 @@ $(document).ready(function () {
             }
         });
     });
+
+    // Info modal functionality
+    $(document).on('click', '.info-btn', function () {
+        const courseCode = $(this).data('id');
+        const courseName = $(this).data('name');
+        const college = $(this).data('college');
+
+        // Reset modal content
+        $('#infoCourseCode').text(courseCode);
+        $('#infoCourseName').text(courseName);
+        $('#infoCollege').text(college);
+        $('#infoEnrolledStudents').empty();
+
+        // Fetch enrolled students
+        $.ajax({
+            url: `/programs/${courseCode}/students`,
+            method: 'GET',
+            success: function (response) {
+                const students = response.students;
+                
+                // Container for student count and "See enrolled" link
+                const enrollmentContainer = $('<div>').addClass('d-flex align-items-center gap-2');
+                
+                // Add student count
+                enrollmentContainer.append($('<span>').text(`${students.length} students`));
+                
+                // Add "See enrolled" link if there are students
+                if (students.length > 0) {
+                    const seeEnrolledLink = $('<a>')
+                        .attr('href', '#')
+                        .addClass('see-enrolled-link')
+                        .text('See enrolled')
+                        .click(function(e) {
+                            e.preventDefault();
+                            showStudentList(students);
+                        });
+                    enrollmentContainer.append(seeEnrolledLink);
+                }
+                
+                $('#infoEnrolledStudents').append(enrollmentContainer);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching students:', error);
+                $('#infoEnrolledStudents').append(
+                    $('<div>').addClass('text-danger').text('Error loading students')
+                );
+            }
+        });
+    });
+
+    function showStudentList(students) {
+        // Create student list container
+        const studentListContainer = $('<div>')
+            .attr('id', 'studentList')
+            .addClass('mt-3');
+
+        // Add back button
+        const backButton = $('<button>')
+            .addClass('btn btn-sm btn-secondary mb-2')
+            .text('Back to count')
+            .click(function () {
+                $('#studentList').remove();
+                $('.see-enrolled-link').show();
+            });
+
+        studentListContainer.append(backButton);
+
+        // Create and add student links
+        const studentList = $('<div>').addClass('student-list');
+        students.forEach(student => {
+            studentList.append(
+                $('<div>')
+                    .addClass('mb-1')
+                    .append(
+                        $('<a>')
+                            .attr('href', '#')
+                            .addClass('student-link')
+                            .text(student.name)
+                            .click(function(e) {
+                                e.preventDefault();
+                                window.location.href = `/students?id=${student.id_num}`;
+                            })
+                    )
+            );
+        });
+
+        studentListContainer.append(studentList);
+
+        // Hide the "See enrolled" link and append the student list
+        $('.see-enrolled-link').hide();
+        $('#infoEnrolledStudents').append(studentListContainer);
+    }
 });
+

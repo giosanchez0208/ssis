@@ -1,3 +1,95 @@
+async function initializeStudentTable() {
+    return new Promise((resolve, reject) => {
+        try {
+            // Initialize the DataTable
+            var table = $('#student_table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/students/data',
+                    type: 'POST',
+                    data: function(d) {
+                        d.courseFilter = $('#courseFilter').val();
+                    }
+                },
+                columns: [
+                    { 
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            if (row.profile_picture_id) {
+                                const cloudinaryUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/c_fill,h_30,w_30/${row.profile_picture_id}`;
+                                return `<img src="${cloudinaryUrl}" alt="Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
+                            } else {
+                                return `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" alt="Default Profile Picture" class="rounded-circle mx-2" width="30" height="30" style="object-fit: cover;">`;
+                            }
+                        }
+                    },
+                    { data: 'id_num', orderable: true },
+                    { 
+                        data: null,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            return `<b>${data.last_name}</b>, ${data.first_name}`;
+                        }
+                    },
+                    { data: 'year_level', orderable: true, className: 'hide-on-mobile-view' },
+                    { 
+                        data: 'course',
+                        orderable: true,
+                        render: function(data, type, row) {
+                            if (!data || data === 'none' || data === '') {
+                                return '<span class="text-secondary">Not Enrolled</span>';
+                            }
+                            return data;
+                        }
+                    },
+                    { data: 'gender', orderable: true, className: 'hide-on-mobile-view' },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'button-column',
+                        render: function (data, type, row) {
+                            return `
+                                <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
+                                    data-bs-target="#editModal" data-id="${row.id_num}">
+                                    <i class="fas fa-edit p-1"></i>
+                                </button>
+                            `;
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'button-column',
+                        render: function (data, type, row) {
+                            return `
+                                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                    data-student-name="${row.last_name}, ${row.first_name}"
+                                    data-id="${row.id_num}">
+                                    <i class="fas fa-trash p-1"></i>
+                                </button>
+                            `;
+                        }
+                    }
+                ],
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100]
+            });
+
+            // Listen for the `init` event and resolve the Promise
+            table.on('init', function() {
+                resolve(table);
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
 $(document).ready(function() {
     // Initialize the DataTable
     var table = $('#student_table').DataTable({
@@ -43,7 +135,13 @@ $(document).ready(function() {
             },
             { 
                 data: 'course',
-                orderable: true
+                orderable: true,
+                render: function(data, type, row) {
+                    if (!data || data === 'none' || data === '') {
+                        return '<span class="text-secondary">Not Enrolled</span>';
+                    }
+                    return data;
+                }
             },
             { 
                 data: 'gender',
@@ -82,6 +180,63 @@ $(document).ready(function() {
         ],
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100]
+    });
+
+    // if /edit then load modal
+    table.on('init', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('id');
+        if (studentId) {
+            fetch(`/students/edit/${studentId}`)
+            .then(response => response.json())
+            .then(student => {
+                const modal = new bootstrap.Modal(document.getElementById('editModal'));
+                
+                // Populate form fields
+                document.getElementById('editIdNumber').value = student.id_num;
+                document.getElementById('editFirstName').value = student.first_name;
+                document.getElementById('editLastName').value = student.last_name;
+                document.getElementById('editCourse').value = student.course || '';
+                document.getElementById('editYear').value = student.year_level;
+                
+                // Handle profile picture
+                const profilePreview = document.getElementById('editProfilePreview');
+                if (student.profile_picture_id) {
+                    profilePreview.src = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/c_fill,h_100,w_100/${student.profile_picture_id}`;
+                }
+                
+                // Handle gender selection
+                const genderRadios = document.getElementsByName('gender');
+                let foundMatchingGender = false;
+
+                genderRadios.forEach(radio => {
+                    if (radio.value === student.gender) {
+                        radio.checked = true;
+                        foundMatchingGender = true;
+                    }
+                });
+
+                const customRadio = document.getElementById('editCustom');
+                const customGenderField = document.getElementById('editCustomGenderField');
+                const customGenderInput = document.getElementById('editCustomGender');
+
+                if (!foundMatchingGender) {
+                    customRadio.checked = true;
+                    customGenderField.style.display = 'block';
+                    customGenderInput.value = student.gender;
+                } else {
+                    customGenderField.style.display = 'none';
+                    customGenderInput.value = '';
+                }
+                
+                // Show modal
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error fetching student data:', error);
+                alert('Failed to load student data');
+            });
+        }
     });
 
     // Course filter change handler

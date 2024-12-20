@@ -42,6 +42,12 @@ def list_students():
 
 @student_bp.route('/', methods=['GET', 'POST'])
 def list_students():
+    student_id = request.args.get('id')
+    show_modal = False
+    
+    if student_id:
+        show_modal = True
+        
     if request.method == 'POST':
         try:
             id_num = request.form['idNumber']
