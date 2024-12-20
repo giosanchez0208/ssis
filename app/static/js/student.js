@@ -429,6 +429,9 @@ $(document).ready(function() {
                 document.getElementById('editCourse').value = student.course || '';
                 document.getElementById('editYear').value = student.year_level;
     
+                // Reset the file input
+                document.getElementById('editProfilePicture').value = '';
+
                 // Set the profile picture preview
                 const profilePreview = document.getElementById('editProfilePreview');
                 if (student.profile_picture_id) {
@@ -438,6 +441,9 @@ $(document).ready(function() {
                     profilePreview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=';
                 }
     
+                // Toggle the remove button based on profile picture presence
+                toggleRemoveButton();
+
                 // Handle gender selection
                 const genderRadios = document.getElementsByName('gender');
                 let foundMatchingGender = false;
@@ -523,9 +529,8 @@ $(document).ready(function() {
             console.log('Edit response:', responseData);
 
             if (responseData.success) {
-                const modal = bootstrap.Modal.getInstance(editModal);
-                modal.hide();
-                location.reload();
+                alert('Student updated successfully');
+                $('#student_table').DataTable().ajax.reload();
             } else {
                 throw new Error(responseData.message || 'Failed to update student');
             }
@@ -534,6 +539,89 @@ $(document).ready(function() {
             alert('Failed to update student: ' + error.message);
         } finally {
             submitBtn.disabled = false;
+        }
+    });
+
+    // show/hide remove button based on profile picture presence
+    const editProfilePictureInput = document.getElementById('editProfilePicture');
+    const deleteProfilePictureButton = document.getElementById('deleteProfilePicture');
+    const editProfilePreview = document.getElementById('editProfilePreview');
+
+    function toggleRemoveButton() {
+        if (editProfilePreview.src.includes('data:image/svg+xml') || editProfilePictureInput.files.length > 0) {
+            deleteProfilePictureButton.style.display = 'none';
+        } else {
+            deleteProfilePictureButton.style.display = 'inline-block';
+        }
+    }
+
+    deleteProfilePictureButton.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const studentId = document.getElementById('editIdNumber').value;
+        const confirmDelete = confirm('Are you sure you want to remove the profile picture?');
+        if (!confirmDelete) {
+            return;
+        }
+        try {
+            const response = await fetch(`/cloudinary/delete/${studentId}`, {
+                method: 'POST'
+            });
+            const responseData = await response.json();
+            if (responseData.success) {
+                editProfilePreview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=';
+                toggleRemoveButton();
+                $('#student_table').DataTable().ajax.reload();
+            } else {
+                throw new Error(responseData.message || 'Failed to delete profile picture');
+            }
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Failed to delete profile picture: ' + error.message);
+        }
+    });
+
+    editProfilePictureInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editProfilePreview.src = e.target.result;
+                toggleRemoveButton();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    deleteProfilePictureButton.addEventListener('click', async function (e) {
+        e.preventDefault();
+        const studentId = document.getElementById('editIdNumber').value;
+        try {
+            const response = await fetch(`/cloudinary/delete/${studentId}`, {
+                method: 'POST'
+            });
+            const responseData = await response.json();
+            if (responseData.success) {
+                editProfilePreview.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=';
+                toggleRemoveButton();
+                $('#student_table').DataTable().ajax.reload();
+            } else {
+                throw new Error(responseData.message || 'Failed to delete profile picture');
+            }
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Failed to delete profile picture: ' + error.message);
+        }
+    });
+
+    editProfilePictureInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editProfilePreview.src = e.target.result;
+                toggleRemoveButton();
+            };
+            reader.readAsDataURL(file);
         }
     });
 
@@ -566,6 +654,7 @@ $(document).ready(function() {
                 }
 
                 window.location.reload();
+                $('#student_table').DataTable().ajax.reload();
             } catch (error) {
                 console.error('Submission failed:', error);
                 alert('Failed to create student: ' + error.message);

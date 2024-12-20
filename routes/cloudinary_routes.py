@@ -126,3 +126,44 @@ def update_image():
     finally:
         if 'conn' in locals():
             conn.close()
+
+@cloudinary_bp.route('/delete/<student_id>', methods=['POST'])
+def delete_image(student_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT profile_picture_id FROM students WHERE id_num = %s', (student_id,))
+        student = cursor.fetchone()
+        
+        if not student:
+            return jsonify({
+                'success': False,
+                'error': 'Student not found'
+            }), 404
+            
+        if student['profile_picture_id']:
+            try:
+                cloudinary.uploader.destroy(student['profile_picture_id'])
+                cursor.execute('UPDATE students SET profile_picture_id = NULL WHERE id_num = %s', (student_id,))
+                conn.commit()
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': f"Error deleting image: {str(e)}"
+                }), 500
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture deleted successfully'
+        })
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()

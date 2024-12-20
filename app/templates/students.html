@@ -232,7 +232,7 @@
         </div>
     </div>
 
-    <!-- Edit Student Modal -->
+    <!-- ========== Edit Student Modal ========== -->
     <div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -255,8 +255,11 @@
                                         style="width: 100px; height: 100px; object-fit: cover;">
                                     <div class="d-flex flex-column gap-2">
                                         <small class="text-muted mb-1">Update Photo:</small>
+                                        <div class="d-flex flex-row gap-1">
                                         <input type="file" class="form-control" id="editProfilePicture" name="profilePicture" 
                                             accept="image/*" style="width: 250px;">
+                                            <button class="btn btn-secondary" id="deleteProfilePicture">Remove</button>
+                                        </div>
                                         <small class="text-muted">Recommended: Square image, max 2MB</small>
                                     </div>
                                 </div>
