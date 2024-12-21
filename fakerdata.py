@@ -48,7 +48,7 @@ def generate_student():
         'course': random.choice(courses),
         'gender': gender,
         'year_level': 1,
-        'profile_picture_id': None  # Set to None as it's optional
+        'profile_picture_id': None
     }
 
 def insert_students(num_students):
