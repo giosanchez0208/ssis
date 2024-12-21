@@ -170,7 +170,7 @@ function deleteCollege(collegeCode) {
     });
 }
 
-// pie chart isntance
+// pie chart instance
 let studentPieChart;
 
 function setupInfoButton() {
@@ -194,9 +194,13 @@ function setupInfoButton() {
 
                 courses.forEach(course => {
                     const courseItem = $('<li>').addClass('list-group-item d-flex justify-content-between align-items-center');
-                    courseItem.text(`${course.course_name} (${course.course_code})`);
+                    const courseLink = $('<a>')
+                        .attr('href', '#')
+                        .addClass('course-link')
+                        .data('course-code', course.course_code)
+                        .text(`${course.course_name} (${course.course_code})`);
                     const studentCount = $('<span>').addClass('badge bg-primary rounded-pill').text(course.student_count);
-                    courseItem.append(studentCount);
+                    courseItem.append(courseLink).append(studentCount);
                     courseList.append(courseItem);
                 });
 
@@ -215,6 +219,11 @@ function setupInfoButton() {
         });
 
         $('#infoModal').modal('show');
+    });
+
+    $(document).on('click', '.course-link', function () {
+        const courseCode = $(this).data('course-code');
+        window.location.href = `/programs?course_code=${courseCode}`;
     });
 }
 
