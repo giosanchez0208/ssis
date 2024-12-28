@@ -1,23 +1,12 @@
 import os
 from flask import Blueprint, request, jsonify, current_app
-import pymysql
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
 import logging
+from controllers.db_controller import get_db_connection
 
 cloudinary_bp = Blueprint('cloudinary', __name__, url_prefix='/cloudinary')
-
-# Database connection setup
-def get_db_connection():
-    return pymysql.connect(
-        host=os.getenv('DB_HOST'),
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD'),
-        db=os.getenv('DB_NAME'),
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
-    )
 
 @cloudinary_bp.route('/test_config', methods=['GET'])
 def test_config():

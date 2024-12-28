@@ -412,10 +412,57 @@ $(document).ready(function () {
         const urlParams = new URLSearchParams(window.location.search);
         const courseCode = urlParams.get('course_code');
         if (courseCode) {
-            const infoButton = $(`.info-btn[data-id="${courseCode}"]`);
-            if (infoButton.length) {
-                infoButton.click();
-            }
+            $.ajax({
+                url: `/programs/${courseCode}`,
+                method: 'GET',
+                success: function(program) {
+                    // populate modal content
+                    $('#infoCourseCode').text(program.course_code);
+                    $('#infoCourseName').text(program.course_name);
+                    $('#infoCollege').text(program.college);
+                    $('#infoEnrolledStudents').empty();
+                    
+                    // fetch students directly
+                    $.ajax({
+                        url: `/programs/${program.course_code}/students`,
+                        method: 'GET',
+                        success: function(response) {
+                            const students = response.students;
+                            const yearLevels = response.year_levels;
+                            
+                            // create the enrollment container
+                            const enrollmentContainer = $('<div>').addClass('d-flex align-items-center gap-2');
+                            enrollmentContainer.append($('<span>').text(`${students.length} students`));
+                            
+                            if (students.length > 0) {
+                                const seeEnrolledLink = $('<a>')
+                                    .attr('href', '#')
+                                    .addClass('see-enrolled-link')
+                                    .text('See enrolled')
+                                    .click(function(e) {
+                                        e.preventDefault();
+                                        showStudentList(students);
+                                    });
+                                enrollmentContainer.append(seeEnrolledLink);
+                            }
+                            
+                            $('#infoEnrolledStudents').empty().append(enrollmentContainer);
+                            displayYearLevelPieChart(yearLevels);
+                            $('#infoModal').modal('show');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error fetching students:', error);
+                            $('#infoEnrolledStudents')
+                                .empty()
+                                .append($('<div>').addClass('text-danger').text('Error loading students'));
+                            $('#infoModal').modal('show');
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching program:', error);
+                }
+            });
         }
     }
 
