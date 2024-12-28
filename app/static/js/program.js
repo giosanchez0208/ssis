@@ -2,7 +2,10 @@ $(document).ready(function () {
     // Initialize DataTable
     const programTable = $('#program_table').DataTable({
         columnDefs: [
-            { orderable: false, targets: [-3, -2, -1] }
+            {
+                orderable: false,
+                targets: [-3, -2, -1]
+            }
         ],
         initComplete: function (settings, json) {
             $('.dataTables_filter input')
@@ -11,101 +14,10 @@ $(document).ready(function () {
                 })
                 .attr('placeholder', 'Search...');
             
+            // Check for course_code parameter and open info modal if it exists
             openInfoModalIfCourseCodeExists();
         }
     });
-
-    function openInfoModalIfCourseCodeExists() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const courseCode = urlParams.get('course_code');
-        
-        if (!courseCode) return;
-    
-        let attempts = 0;
-        const maxAttempts = 20;
-        
-        const tryOpenModal = () => {
-            const table = $('#program_table').DataTable();
-            table.search(courseCode).draw();
-            
-            const infoButton = $(`.info-btn[data-id="${courseCode}"]`);
-            
-            if (infoButton.length) {
-                // get the data manually
-                const courseName = infoButton.data('name');
-                const college = infoButton.data('college');
-    
-                // reset modal content first
-                $('#infoCourseCode').text(courseCode);
-                $('#infoCourseName').text(courseName);
-                $('#infoCollege').text(college);
-                $('#infoEnrolledStudents').empty();
-    
-                // then fetch enrolled students data
-                $.ajax({
-                    url: `/programs/${courseCode}/students`,
-                    method: 'GET',
-                    success: function (response) {
-                        const students = response.students;
-                        const yearLevels = response.year_levels;
-    
-                        // container for student count and "See enrolled" link
-                        const enrollmentContainer = $('<div>').addClass('d-flex align-items-center gap-2');
-                        
-                        // add student count
-                        enrollmentContainer.append($('<span>').text(`${students.length} students`));
-                        
-                        // add "See enrolled" link if there are students
-                        if (students.length > 0) {
-                            const seeEnrolledLink = $('<a>')
-                                .attr('href', '#')
-                                .addClass('see-enrolled-link')
-                                .text('See enrolled')
-                                .click(function(e) {
-                                    e.preventDefault();
-                                    showStudentList(students);
-                                });
-                            enrollmentContainer.append(seeEnrolledLink);
-                        }
-                        
-                        $('#infoEnrolledStudents').append(enrollmentContainer);
-    
-                        // display pie chart
-                        displayYearLevelPieChart(yearLevels);
-                        
-                        // show modal after data is loaded
-                        $('#infoModal').modal('show');
-                        
-                        // clean up URL
-                        const newUrl = window.location.pathname;
-                        window.history.replaceState({}, '', newUrl);
-                        
-                        // clear the search after a delay
-                        setTimeout(() => {
-                            table.search('').draw();
-                        }, 100);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching students:', error);
-                        $('#infoEnrolledStudents').append(
-                            $('<div>').addClass('text-danger').text('Error loading students')
-                        );
-                        $('#infoModal').modal('show');
-                    }
-                });
-                
-                return true;
-            }
-            
-            attempts++;
-            if (attempts < maxAttempts) {
-                setTimeout(tryOpenModal, 100);
-            }
-            return false;
-        };
-    
-        tryOpenModal();
-    }
 
     // Function to validate the create form
     function validateCreateForm() {
@@ -496,5 +408,18 @@ $(document).ready(function () {
         });
     }
 
+    function openInfoModalIfCourseCodeExists() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseCode = urlParams.get('course_code');
+        if (courseCode) {
+            const infoButton = $(`.info-btn[data-id="${courseCode}"]`);
+            if (infoButton.length) {
+                infoButton.click();
+            }
+        }
+    }
+
+    // check for course_code parameter and open info modal if it exists
+    openInfoModalIfCourseCodeExists();
 });
 

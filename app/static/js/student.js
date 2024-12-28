@@ -420,7 +420,8 @@ $(document).ready(function() {
 
     // Edit modal logic
     const editModal = document.getElementById('editModal');
-    
+    const deleteProfilePictureButton = document.getElementById('deleteProfilePicture');
+
     editModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
         const studentId = button.getAttribute('data-id');
@@ -488,8 +489,10 @@ $(document).ready(function() {
                 console.error('Error:', error);
                 alert('An error occurred while fetching student data.');
             });
+            
     });
 
+    
     // Edit form submit handler
     const editForm = document.getElementById('editForm');
     editForm.addEventListener('submit', async function (e) {
@@ -504,7 +507,7 @@ $(document).ready(function() {
             const fileInput = document.getElementById('editProfilePicture');
             const file = fileInput.files[0];
             const studentId = document.getElementById('editIdNumber').value;
-            
+        
             console.log('Form data:', {
                 hasFile: !!file,
                 studentId,
@@ -521,17 +524,26 @@ $(document).ready(function() {
                 console.log('Got image URL:', imageUrl);
                 formData.set('profile_picture_id', imageUrl);
             }
-            
-            console.log('Submitting to edit endpoint...');
+
             const response = await fetch(`/students/edit/${studentId}`, {
                 method: 'POST',
                 body: formData
             });
-
+    
             const responseData = await response.json();
             console.log('Edit response:', responseData);
-
+    
             if (responseData.success) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('editProfilePreview').src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+                
+                toggleRemoveButton();
+                
                 alert('Student updated successfully');
                 $('#student_table').DataTable().ajax.reload();
             } else {
@@ -547,14 +559,16 @@ $(document).ready(function() {
 
     // show/hide remove button based on profile picture presence
     const editProfilePictureInput = document.getElementById('editProfilePicture');
-    const deleteProfilePictureButton = document.getElementById('deleteProfilePicture');
     const editProfilePreview = document.getElementById('editProfilePreview');
 
     function toggleRemoveButton() {
-        if (editProfilePreview.src.includes('data:image/svg+xml') || editProfilePictureInput.files.length > 0) {
-            deleteProfilePictureButton.style.display = 'none';
-        } else {
+        const editProfilePreview = document.getElementById('editProfilePreview');
+        const editProfilePictureInput = document.getElementById('editProfilePicture');
+            
+        if (!editProfilePreview.src.includes('data:image/svg+xml') && editProfilePictureInput.files.length === 0) {
             deleteProfilePictureButton.style.display = 'inline-block';
+        } else {
+            deleteProfilePictureButton.style.display = 'none';
         }
     }
 
@@ -589,7 +603,7 @@ $(document).ready(function() {
             const reader = new FileReader();
             reader.onload = function (e) {
                 editProfilePreview.src = e.target.result;
-                toggleRemoveButton();
+                document.getElementById('deleteProfilePicture').style.display = 'none'; // Hide delete button when new file selected
             };
             reader.readAsDataURL(file);
         }
@@ -695,6 +709,7 @@ $(document).ready(function() {
                 preview.src = event.target.result;
             };
             reader.readAsDataURL(file);
+            toggleRemoveButton();
         });
     }
 
