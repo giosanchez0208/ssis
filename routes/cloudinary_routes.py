@@ -3,8 +3,12 @@ from flask import Blueprint, request, jsonify, current_app
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
-import logging
-from controllers.db_controller import get_db_connection
+from controllers.db_controller import (
+    get_student_profile_picture_id,
+    update_profile_picture_id,
+    remove_profile_picture,
+    fetch_single_student
+)
 
 cloudinary_bp = Blueprint('cloudinary', __name__, url_prefix='/cloudinary')
 
@@ -16,6 +20,7 @@ def test_config():
             'api_key': current_app.config['CLOUDINARY_API_KEY'],
             'api_secret': 'exists' if current_app.config['CLOUDINARY_API_SECRET'] else 'missing'
         })
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -50,6 +55,7 @@ def upload_image():
             'url': upload_result['secure_url'],
             'public_id': upload_result['public_id']
         })
+        
     except Exception as e:
         return jsonify({
             'success': False,
@@ -68,23 +74,19 @@ def update_image():
     student_id = request.form['student_id']
     
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('SELECT profile_picture_id FROM students WHERE id_num = %s', (student_id,))
-        student = cursor.fetchone()
-        
+        student = fetch_single_student(student_id)
         if not student:
             return jsonify({
                 'success': False,
                 'error': 'Student not found'
             }), 404
-            
-        if student['profile_picture_id']:
+
+        old_picture_id = get_student_profile_picture_id(student_id)
+        if old_picture_id:
             try:
-                cloudinary.uploader.destroy(student['profile_picture_id'])
+                cloudinary.uploader.destroy(old_picture_id)
             except Exception as e:
-                print(f"Error deleting old image: {str(e)}")
+                current_app.logger.error(f"Error deleting old image: {str(e)}")
                 
         upload_result = cloudinary.uploader.upload(
             file,
@@ -95,64 +97,48 @@ def update_image():
                 {'quality': 'auto'}
             ]
         )
-        
-        cursor.execute('UPDATE students SET profile_picture_id = %s WHERE id_num = %s', 
-                      (upload_result['public_id'], student_id))
-        conn.commit()
+
+        update_profile_picture_id(student_id, upload_result['public_id'])
         
         return jsonify({
             'success': True,
             'url': upload_result['secure_url'],
             'public_id': upload_result['public_id']
         })
+        
     except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 @cloudinary_bp.route('/delete/<student_id>', methods=['POST'])
 def delete_image(student_id):
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
         
-        cursor.execute('SELECT profile_picture_id FROM students WHERE id_num = %s', (student_id,))
-        student = cursor.fetchone()
-        
-        if not student:
+        picture_id = get_student_profile_picture_id(student_id)
+        if not picture_id:
             return jsonify({
                 'success': False,
-                'error': 'Student not found'
+                'error': 'No profile picture found'
             }), 404
-            
-        if student['profile_picture_id']:
-            try:
-                cloudinary.uploader.destroy(student['profile_picture_id'])
-                cursor.execute('UPDATE students SET profile_picture_id = NULL WHERE id_num = %s', (student_id,))
-                conn.commit()
-            except Exception as e:
-                return jsonify({
-                    'success': False,
-                    'error': f"Error deleting image: {str(e)}"
-                }), 500
+        try:
+            cloudinary.uploader.destroy(picture_id)
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f"Error deleting image: {str(e)}"
+            }), 500
+
+        remove_profile_picture(student_id)
         
         return jsonify({
             'success': True,
             'message': 'Profile picture deleted successfully'
         })
+        
     except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-    finally:
-        if 'conn' in locals():
-            conn.close()

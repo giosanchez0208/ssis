@@ -165,6 +165,45 @@ def fetch_single_student(id_num):
     conn.close()
     return student
 
+# student profile picture methods
+def get_student_profile_picture_id(student_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('SELECT profile_picture_id FROM students WHERE id_num = %s', (student_id,))
+        result = cur.fetchone()
+        return result['profile_picture_id'] if result else None
+    finally:
+        cur.close()
+        conn.close()
+
+def update_profile_picture_id(student_id, picture_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('UPDATE students SET profile_picture_id = %s WHERE id_num = %s', 
+                   (picture_id, student_id))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+def remove_profile_picture(student_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('UPDATE students SET profile_picture_id = NULL WHERE id_num = %s', (student_id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
 # program methods
 def fetch_programs():
     conn = get_db_connection()
