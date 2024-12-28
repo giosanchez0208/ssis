@@ -1,407 +1,324 @@
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <!-- Fontawesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" rel="stylesheet">
-    <title>Homepage</title>
-</head>
+{% block title %}Homepage{% endblock %}
 
-<body class="bg-gray">
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.css" rel="stylesheet">
+{% endblock %}
 
-    <!-- ========== Main Data Table ========== -->
-    <div class="bg-gray p-5 mt-5">
-        <div class="row align-items-center">
-            <div class="col">
-                <h1>Manage <b>Students</b></h1>
+{% block content %}
+<div class="row align-items-center">
+    <div class="col">
+        <h1>Manage <b>Students</b></h1>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create Student</button>
+    </div>
+</div>
+<hr />
+<div class="row mb-4">
+    <div class="col-md-4">
+        <label for="courseFilter" class="form-label">Filter by course:</label>
+        <select class="form-select" id="courseFilter">
+            <option value="">All Courses</option>
+            {% for program in programs %}
+            <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<table id="student_table" class="table table-hover" style="width:100%">
+    <thead>
+        <tr>
+            <th class="button-column"></th> <!-- Profile Picture -->
+            <th>ID Number</th>
+            <th>Full Name</th>
+            <th class="hide-on-mobile-view">Year Level</th>
+            <th>Course</th>
+            <th class="hide-on-mobile-view">Gender</th>
+            <th class="button-column"></th> <!-- Edit -->
+            <th class="button-column"></th> <!-- Delete -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in students %}
+        <tr>
+            <td class="button-column">
+                {% if student.profile_picture_id %}
+                    <img src="https://res.cloudinary.com/{{ config.CLOUDINARY_CLOUD_NAME }}/image/upload/c_fill,h_30,w_30/{{ student.profile_picture_id }}"
+                        class="rounded-circle"
+                        width="30"
+                        height="30"
+                        style="object-fit: cover;"
+                        alt="Profile Picture of {{ student.first_name }}">
+                {% else %}
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo="
+                        class="rounded-circle"
+                        width="30"
+                        height="30"
+                        style="object-fit: cover;"
+                        alt="Default Profile Picture">
+                {% endif %}
+            </td>
+            <td>{{ student.id_num }}</td>
+            <td><b>{{ student.last_name }}</b>, {{ student.first_name }}</td>
+            <td class="hide-on-mobile-view">{{ student.year_level }}</td>
+            <td>{{ student.course }}</td>
+            <td class="hide-on-mobile-view">{{ student.gender }}</td>
+            <td>
+                <button class="btn btn-warning btn-sm edit-btn" 
+                        data-bs-toggle="modal"
+                        data-bs-target="#editModal" 
+                        data-id="{{ student.id_num }}"
+                        data-profile-picture="{{ student.profile_picture_id }}">
+                    <i class="fas fa-edit p-1" style="color: white;"></i>
+                </button>
+            </td>
+            <td>
+                <button class="btn btn-danger btn-sm" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteModal"
+                        data-student-name="{{ student.last_name }}, {{ student.first_name }}"
+                        data-id="{{ student.id_num }}">
+                    <i class="fas fa-trash p-1"></i>
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+{% block modals %}
+<!-- Create Student Modal -->
+<div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Create Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create
-                    Student</button>
+            <div class="modal-body">
+                <form action="{{ url_for('student.list_students') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="profilePicture" class="form-label">Profile Picture</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <img id="profilePreview" 
+                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" 
+                                alt="Profile preview" 
+                                class="rounded-circle" 
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <div class="d-flex flex-column gap-2">
+                                <input type="file" class="form-control" id="profilePicture" name="profilePicture" 
+                                    accept="image/*" style="width: 250px;">
+                                <small class="text-muted">Recommended: Square image, max 2MB</small>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ID Number -->
+                    <div class="mb-3">
+                        <label for="idNumber" class="form-label">ID Number</label>
+                        <input type="text" name="idNumber" class="form-control" id="idNumber" required
+                            style="width: 170px;" pattern="^\d{4}-\d{4}$" title="Format: YYYY-NNNN">
+                        <small id="idError" class="text-danger" style="display: none;">ID Number already exists.</small>
+                    </div>
+
+                    <!-- First Name and Last Name -->
+                    <div class="d-flex mb-3">
+                        <div class="me-2" style="flex: 1;">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" name="firstName" class="form-control" id="firstName" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" name="lastName" class="form-control" id="lastName" required>
+                        </div>
+                    </div>
+
+                    <!-- Course Dropdown -->
+                    <div class="mb-3">
+                        <label for="course" class="form-label">Course</label>
+                        <select name="course" class="form-select" id="course" required>
+                            <option style="color: gray;" value="">Not enrolled in any program</option>
+                            {% for program in programs %}
+                            <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Year Dropdown -->
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <select name="year" class="form-select" id="year" required>
+                            <option value="">Select Year</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+
+                    <!-- Gender Toggle Button Group -->
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <div class="btn-group d-block" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" name="gender" id="male" value="Male" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="male">Male</label>
+
+                            <input type="radio" name="gender" id="female" value="Female" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="female">Female</label>
+
+                            <input type="radio" name="gender" id="custom" value="Custom" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="custom">Custom</label>
+                        </div>
+
+                        <!-- Gender Custom Text Field -->
+                        <div class="mt-2" id="customGenderField" style="display: none;">
+                            <input type="text" class="form-control" placeholder="Gender (Optional)"
+                                id="customGender" name="customGender">
+                        </div>
+                    </div>
+                    <hr />
+                    <!-- Submit Button -->
+                    <div class="mb-3 text-end">
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+                    </div>
+                </form>
             </div>
         </div>
-        <hr />
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <label for="courseFilter" class="form-label">Filter by course:</label>
-                <select class="form-select" id="courseFilter">
-                    <option value="">All Courses</option>
-                    {% for program in programs %}
-                    <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
-                    {% endfor %}
-                </select>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to <u>delete</u> the student <br><b><span id="studentName"></span> (<span
+                        id="studentId"></span>)</b> ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
             </div>
         </div>
-        <table id="student_table" class="table table-hover" style="width:100%">
-            <thead>
-                <tr>
-                    <th class="button-column"></th> <!-- Profile Picture -->
-                    <th>ID Number</th>
-                    <th>Full Name</th>
-                    <th class="hide-on-mobile-view">Year Level</th>
-                    <th>Course</th>
-                    <th class="hide-on-mobile-view">Gender</th>
-                    <th class="button-column"></th> <!-- Edit -->
-                    <th class="button-column"></th> <!-- Delete -->
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in students %}
-                <tr>
-                    <td class="button-column">
-                        {% if student.profile_picture_id %}
-                            <img src="https://res.cloudinary.com/{{ config.CLOUDINARY_CLOUD_NAME }}/image/upload/c_fill,h_30,w_30/{{ student.profile_picture_id }}"
-                                class="rounded-circle"
-                                width="30"
-                                height="30"
-                                style="object-fit: cover;"
-                                alt="Profile Picture of {{ student.first_name }}">
-                        {% else %}
-                            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo="
-                                class="rounded-circle"
-                                width="30"
-                                height="30"
-                                style="object-fit: cover;"
-                                alt="Default Profile Picture">
-                        {% endif %}
-                    </td>
-                    <td>{{ student.id_num }}</td>
-                    <td><b>{{ student.last_name }}</b>, {{ student.first_name }}</td>
-                    <td class="hide-on-mobile-view">{{ student.year_level }}</td>
-                    <td>{{ student.course }}</td>
-                    <td class="hide-on-mobile-view">{{ student.gender }}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm edit-btn" 
-                                data-bs-toggle="modal"
-                                data-bs-target="#editModal" 
-                                data-id="{{ student.id_num }}"
-                                data-profile-picture="{{ student.profile_picture_id }}">
-                            <i class="fas fa-edit p-1"  style="color: white;"></i>
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#deleteModal"
-                                data-student-name="{{ student.last_name }}, {{ student.first_name }}"
-                                data-id="{{ student.id_num }}">
-                            <i class="fas fa-trash p-1"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-
-        </table>
     </div>
+</div>
 
-    </div>
-
-
-    <!-- ========== Create Student Modal ========== -->
-    <div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel">Create Student</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ url_for('student.list_students') }}" method="POST">
-                        <div class="mb-3">
-                            <label for="profilePicture" class="form-label">Profile Picture</label>
-                            <div class="d-flex align-items-center gap-3">
-                                <img id="profilePreview" 
-                                    src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" 
-                                    alt="Profile preview" 
-                                    class="rounded-circle" 
-                                    style="width: 100px; height: 100px; object-fit: cover;">
-
-                                <div class="d-flex flex-column gap-2">
-                                    <input type="file" class="form-control" id="profilePicture" name="profilePicture" 
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Edit Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <!-- Profile Picture Upload -->
+                    <div class="mb-3">
+                        <label for="editProfilePicture" class="form-label">Profile Picture</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <img id="editProfilePreview" 
+                                src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" 
+                                alt="Current profile picture" 
+                                class="rounded-circle" 
+                                style="width: 100px; height: 100px; object-fit: cover;">
+                            <div class="d-flex flex-column gap-2">
+                                <small class="text-muted mb-1">Update Photo:</small>
+                                <div class="d-flex flex-row gap-1">
+                                    <input type="file" class="form-control" id="editProfilePicture" name="profilePicture" 
                                         accept="image/*" style="width: 250px;">
-                                    <small class="text-muted">Recommended: Square image, max 2MB</small>
+                                    <button class="btn btn-secondary" id="deleteProfilePicture">Remove</button>
                                 </div>
+                                <small class="text-muted">Recommended: Square image, max 2MB</small>
                             </div>
                         </div>
-                        <!-- ID Number -->
-                        <div class="mb-3">
-                            <label for="idNumber" class="form-label">ID Number</label>
-                            <input type="text" name="idNumber" class="form-control" id="idNumber" required
-                                style="width: 170px;" pattern="^\d{4}-\d{4}$" title="Format: YYYY-NNNN">
-                            <small id="idError" class="text-danger" style="display: none;">ID Number already
-                                exists.</small>
+                    </div>
+
+                    <!-- ID Number (read-only) -->
+                    <div class="mb-3">
+                        <label for="editIdNumber" class="form-label">ID Number</label>
+                        <input type="text" name="idNumber" class="form-control" id="editIdNumber" readonly disabled>
+                    </div>
+
+                    <!-- First Name and Last Name -->
+                    <div class="d-flex mb-3">
+                        <div class="me-2" style="flex: 1;">
+                            <label for="editFirstName" class="form-label">First Name</label>
+                            <input type="text" name="firstName" class="form-control" id="editFirstName" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="editLastName" class="form-label">Last Name</label>
+                            <input type="text" name="lastName" class="form-control" id="editLastName" required>
+                        </div>
+                    </div>
+
+                    <!-- Course Dropdown -->
+                    <div class="mb-3">
+                        <label for="editCourse" class="form-label">Course</label>
+                        <select name="course" class="form-select" id="editCourse">
+                            <option style="color: gray;" value="">Not enrolled in any program</option>
+                            {% for program in programs %}
+                            <option value="{{ program.course_code }}">{{ program.course_code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Year Dropdown -->
+                    <div class="mb-3">
+                        <label for="editYear" class="form-label">Year</label>
+                        <select name="year" class="form-select" id="editYear" required>
+                            <option value="">Select Year</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+
+                    <!-- Gender Toggle Button Group -->
+                    <div class="mb-3">
+                        <label class="form-label">Gender</label>
+                        <div class="btn-group d-block" role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" name="gender" id="editMale" value="Male" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="editMale">Male</label>
+
+                            <input type="radio" name="gender" id="editFemale" value="Female" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="editFemale">Female</label>
+
+                            <input type="radio" name="gender" id="editCustom" value="Custom" required class="btn-check">
+                            <label class="btn btn-outline-primary" for="editCustom">Custom</label>
                         </div>
 
-
-
-                        <!-- First Name and Last Name (side by side) -->
-                        <div class="d-flex mb-3">
-                            <div class="me-2" style="flex: 1;">
-                                <label for="firstName" class="form-label">First Name</label>
-                                <input type="text" name="firstName" class="form-control" id="firstName" required>
-                            </div>
-                            <div style="flex: 1;">
-                                <label for="lastName" class="form-label">Last Name</label>
-                                <input type="text" name="lastName" class="form-control" id="lastName" required>
-                            </div>
-                        </div>
-
-                        <!-- Course Dropdown -->
-                        <div class="mb-3">
-                            <label for="course" class="form-label">Course</label>
-                            <select name="course" class="form-select" id="course" required>
-                                <option style="color: gray;" value="">Not enrolled in any program</option>
-                                {% for program in programs %}
-                                <option value="{{ program.course_code }}">{{ program.course_code }} - {{ program.course_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <!-- Year Dropdown -->
-                        <div class="mb-3">
-                            <label for="year" class="form-label">Year</label>
-                            <select name="year" class="form-select" id="year" required>
-                                <option value="">Select Year</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
-                        </div>
-
-                        <!-- Gender Toggle Button Group -->
-                        <div class="mb-3">
-                            <label class="form-label">Gender</label>
-                            <div class="btn-group d-block" role="group" aria-label="Basic radio toggle button group">
-                                <input type="radio" name="gender" id="male" value="Male" required class="btn-check">
-                                <label class="btn btn-outline-primary" for="male">Male</label>
-
-                                <input type="radio" name="gender" id="female" value="Female" required class="btn-check">
-                                <label class="btn btn-outline-primary" for="female">Female</label>
-
-                                <input type="radio" name="gender" id="custom" value="Custom" required class="btn-check">
-                                <label class="btn btn-outline-primary" for="custom">Custom</label>
-                            </div>
-
-                            <!-- Gender Custom Text Field (hidden by default) -->
-                            <div class="mt-2" id="customGenderField" style="display: none;">
-                                <input type="text" class="form-control" placeholder="Gender (Optional)"
-                                    id="customGender" name="customGender">
-                            </div>
-                        </div>
-                        <hr />
-                        <!-- Submit Button -->
-                        <div class="mb-3 text-end">
-                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit</button>
-                        </div>
-                    </form>
-
-                </div>
+                        <!-- Gender Custom Text Field -->
+                        <small class="mt-2" id="editCustomGenderField" style="display: none;">
+                            <input type="text" class="form-control" placeholder="Gender (Optional)"
+                                id="editCustomGender" name="customGender">
+                        </small>
+                    </div>
+                    <hr />
+                    <!-- Submit Button -->
+                    <div class="mb-3 text-end">
+                        <button type="submit" class="btn btn-primary" id="editSubmitBtn">Update</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- ========== Delete Confirmation Modal ========== -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to <u>delete</u> the student <br><b><span id="studentName"></span> (<span
-                            id="studentId"></span>)</b> ?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== Edit Student Modal ========== -->
-    <div class="modal fade" id="editModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Student</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editForm">
-                        <form id="editForm">
-                            <!-- Profile Picture Upload -->
-                            <div class="mb-3">
-                                <label for="editProfilePicture" class="form-label">Profile Picture</label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <img id="editProfilePreview" 
-                                        src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmMGYwZjAiLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjM1IiByPSIxOCIgZmlsbD0iIzg4ODg4OCIvPgogIDxwYXRoIGQ9Ik0yNSA4NUMyNSA2OCAzNiA1NSA1MCA1NVM3NSA2OCA3NSA4NVYxMDBIMjVWODVaIiBmaWxsPSIjODg4ODg4Ii8+Cjwvc3ZnPgo=" 
-                                        alt="Current profile picture" 
-                                        class="rounded-circle" 
-                                        style="width: 100px; height: 100px; object-fit: cover;">
-                                    <div class="d-flex flex-column gap-2">
-                                        <small class="text-muted mb-1">Update Photo:</small>
-                                        <div class="d-flex flex-row gap-1">
-                                        <input type="file" class="form-control" id="editProfilePicture" name="profilePicture" 
-                                            accept="image/*" style="width: 250px;">
-                                            <button class="btn btn-secondary" id="deleteProfilePicture">Remove</button>
-                                        </div>
-                                        <small class="text-muted">Recommended: Square image, max 2MB</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- ID Number (read-only) -->
-                            <div class="mb-3">
-                                <label for="editIdNumber" class="form-label">ID Number</label>
-                                <input type="text" name="idNumber" class="form-control" id="editIdNumber" readonly
-                                    disabled>
-                            </div>
-
-                            <!-- First Name and Last Name (side by side) -->
-                            <div class="d-flex mb-3">
-                                <div class="me-2" style="flex: 1;">
-                                    <label for="editFirstName" class="form-label">First Name</label>
-                                    <input type="text" name="firstName" class="form-control" id="editFirstName"
-                                        required>
-                                </div>
-                                <div style="flex: 1;">
-                                    <label for="editLastName" class="form-label">Last Name</label>
-                                    <input type="text" name="lastName" class="form-control" id="editLastName" required>
-                                </div>
-                            </div>
-
-                            <!-- Course Dropdown -->
-                            <div class="mb-3">
-                                <label for="editCourse" class="form-label">Course</label>
-                                <select name="course" class="form-select" id="editCourse">
-                                    <option style="color: gray;" value="">Not enrolled in any program</option>
-                                    {% for program in programs %}
-                                    <option value="{{ program.course_code }}">{{ program.course_code }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <!-- Year Dropdown -->
-                            <div class="mb-3">
-                                <label for="editYear" class="form-label">Year</label>
-                                <select name="year" class="form-select" id="editYear" required>
-                                    <option value="">Select Year</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-
-                            <!-- Gender Toggle Button Group -->
-                            <div class="mb-3">
-                                <label class="form-label">Gender</label>
-                                <div class="btn-group d-block" role="group"
-                                    aria-label="Basic radio toggle button group">
-                                    <input type="radio" name="gender" id="editMale" value="Male" required
-                                        class="btn-check">
-                                    <label class="btn btn-outline-primary" for="editMale">Male</label>
-
-                                    <input type="radio" name="gender" id="editFemale" value="Female" required
-                                        class="btn-check">
-                                    <label class="btn btn-outline-primary" for="editFemale">Female</label>
-
-                                    <input type="radio" name="gender" id="editCustom" value="Custom" required
-                                        class="btn-check">
-                                    <label class="btn btn-outline-primary" for="editCustom">Custom</label>
-                                </div>
-
-                                <!-- Gender Custom Text Field (hidden by default) -->
-                                <small class="mt-2" id="editCustomGenderField" style="display: none;">
-                                    <input type="text" class="form-control" placeholder="Gender (Optional)"
-                                        id="editCustomGender" name="customGender">
-                                </small>
-                            </div>
-                            <hr />
-                            <!-- Submit Button -->
-                            <div class="mb-3 text-end">
-                                <button type="submit" class="btn btn-primary" id="editSubmitBtn">Update</button>
-                            </div>
-                        </form>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========== Appbar ========== -->
-    <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
-        <!-- nav -->
-        <div class="col d-flex align-items-center">
-            <!-- student icon -->
-            <div class="mx-2 nav__btn nav__btn-active">
-                <a href="{{ url_for('student.list_students') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-person text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Students</span>
-                </a>
-            </div>
-            <!-- course icon -->
-            <div class="mx-2 nav__btn">
-                <a href="{{ url_for('program.list_programs') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-book text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
-                </a>
-            </div>
-            <!-- college icon -->
-            <div class="mx-2 nav__btn">
-                <a href="{{ url_for('college.list_colleges') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-building-columns text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
-                </a>
-            </div>
-        </div>
-        <!-- menus -->
-        <div class="col d-flex align-items-center justify-content-end">
-            <!-- profile -->
-            <img src="#" alt="profile picture" class="rounded-circle me-1"
-                style="width:38px; height: 38px; object-fit: cover" />
-            <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
-        </div>
-        <!-- main menu -->
-        <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
-            style="width:38px; height:38px; object-fit: cover" id="mainMenu" data-bs-toggle="dropdown"
-            aria-expanded="false" type="button">
-            <i class="fa-solid fa-ellipsis"></i>
-        </div>
-        <!-- main menu dropdown -->
-        <ul class="dropdown-menu">
-            <li class="p-1 mx-2">
-                <h2>Menu</h2>
-            </li>
-            <li><a class="dropdown-item" href="{{ url_for('home') }}">Log out</a></li>
-        </ul>
-    </div>
-
-
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
-    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/student.js') }}"></script>
-    <script> const cloudinaryCloudName = '{{ config.CLOUDINARY_CLOUD_NAME }}'; </script>
-
-</body>
-
-</html>
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+<script src="{{ url_for('static', filename='js/student.js') }}"></script>
+<script>
+    const cloudinaryCloudName = '{{ config.CLOUDINARY_CLOUD_NAME }}';
+</script>
+{% endblock %}

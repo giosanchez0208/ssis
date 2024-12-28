@@ -25,7 +25,11 @@ def list_students():
             if not all([id_num, first_name, last_name, year_level, gender]):
                 students = fetch_students()
                 programs = fetch_programs()
-                return render_template('students.html', students=students, programs=programs, error_message="Please fill out all required fields.")
+                return render_template('students.html', 
+                                    students=students, 
+                                    programs=programs, 
+                                    error_message="Please fill out all required fields.",
+                                    active_page='students') 
 
             if gender == "Custom":
                 custom_gender = request.form.get('customGender')
@@ -36,15 +40,23 @@ def list_students():
                 return redirect(url_for('student.list_students'))
             
             except pymysql.err.IntegrityError:
-                return render_template('students.html', error_message="ID Number already exists.")
+                return render_template('students.html', 
+                                    error_message="ID Number already exists.",
+                                    active_page='students')
 
         except Exception as e:
-            return render_template('students.html', error_message=f"An error occurred: {str(e)}")
+            return render_template('students.html', 
+                                error_message=f"An error occurred: {str(e)}",
+                                active_page='students')
 
     students = fetch_students()
     programs = fetch_programs()
-    return render_template('students.html', students=students, programs=programs, show_modal=show_modal)
-
+    return render_template('students.html', 
+                         students=students, 
+                         programs=programs, 
+                         show_modal=show_modal,
+                         active_page='students')
+    
 @student_bp.route('/get_programs', methods=['GET'])
 def get_programs():
     programs = fetch_programs()
