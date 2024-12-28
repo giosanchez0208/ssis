@@ -600,10 +600,15 @@ $(document).ready(function() {
     editProfilePictureInput.addEventListener('change', function () {
         const file = this.files[0];
         if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File size must be less than 2MB');
+                this.value = ''; 
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function (e) {
                 editProfilePreview.src = e.target.result;
-                document.getElementById('deleteProfilePicture').style.display = 'none'; // Hide delete button when new file selected
+                toggleRemoveButton();
             };
             reader.readAsDataURL(file);
         }

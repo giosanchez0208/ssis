@@ -121,10 +121,15 @@ function setupDeleteCollege() {
     $(document).on('click', '.delete-btn', function () {
         const collegeCode = $(this).data('id');
         const collegeName = $(this).data('name');
-        $('#collegeId').text(collegeCode);
-        $('#collegeName').text(collegeName);
+        
+        $('#deleteModal').data('college-code', collegeCode);
 
-        // Fetch courses and students
+        // show college info in "are you sure" modal
+        $('#deleteModal .modal-body').html(`
+            <p>Are you sure you want to delete <strong>${collegeName} (${collegeCode})</strong>?</p>
+        `);
+
+        // fetch courses and students
         $.ajax({
             url: `/colleges/${collegeCode}/info`,
             method: 'GET',
@@ -154,7 +159,8 @@ function setupDeleteCollege() {
     });
 
     $('#confirmDeleteBtn').on('click', function () {
-        const collegeCode = $('#collegeId').text();
+        // get the college code from the modal's data attribute
+        const collegeCode = $('#deleteModal').data('college-code');
         deleteCollege(collegeCode);
     });
 }
@@ -165,8 +171,13 @@ function deleteCollege(collegeCode) {
         url: '/colleges/delete',
         contentType: 'application/json',
         data: JSON.stringify({ college_code: collegeCode }),
-        success: function () { location.reload(); },
-        error: function () { alert('Error deleting college. Please try again.'); }
+        success: function () { 
+            location.reload(); 
+        },
+        error: function (xhr, status, error) {
+            console.error('Delete failed:', xhr.responseText, status, error);
+            alert('Error deleting college. Please try again.'); 
+        }
     });
 }
 

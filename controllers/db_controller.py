@@ -120,29 +120,35 @@ def fetch_filtered_records(query, params):
 
 def get_students_with_filters(start, length, search_value, order_column, order_dir, course_filter):
     query = """
-        SELECT * FROM students 
+        SELECT * FROM students s
+        LEFT JOIN programs p ON s.course = p.course_code
+        LEFT JOIN colleges c ON p.college = c.college_code
         WHERE 1=1
     """
     params = []
 
     if course_filter:
-        query += " AND course = %s"
+        query += " AND s.course = %s"
         params.append(course_filter)
 
     if search_value:
         search_term = f"%{search_value}%"
         query += """ 
             AND (
-                id_num LIKE %s OR 
-                first_name LIKE %s OR 
-                last_name LIKE %s OR 
-                course LIKE %s OR 
-                gender LIKE %s
+                s.id_num LIKE %s OR 
+                s.first_name LIKE %s OR 
+                s.last_name LIKE %s OR 
+                s.course LIKE %s OR 
+                s.gender LIKE %s OR
+                p.course_code LIKE %s OR
+                p.course_name LIKE %s OR
+                c.college_code LIKE %s OR
+                c.college_name LIKE %s
             )
         """
-        params.extend([search_term] * 5)
+        params.extend([search_term] * 9)
 
-    columns = [None, 'id_num', 'last_name', 'year_level', 'course', 'gender']
+    columns = [None, 's.id_num', 's.last_name', 's.year_level', 's.course', 's.gender']
     if order_column and int(order_column) < len(columns) and columns[int(order_column)] is not None:
         sort_column = columns[int(order_column)]
         query += f" ORDER BY {sort_column} {order_dir.upper()}"
@@ -351,10 +357,13 @@ def delete_college(college_code):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
+        current_app.logger.debug(f"Attempting to delete college with code: {college_code}")  # Debug log
         cur.execute("DELETE FROM colleges WHERE college_code = %s", (college_code,))
         conn.commit()
-    except pymysql.MySQLError:
+        current_app.logger.debug(f"College with code {college_code} deleted successfully")  # Debug log
+    except pymysql.MySQLError as e:
         conn.rollback()
+        current_app.logger.error(f"Error deleting college: {str(e)}")  # Debug log
         raise
     finally:
         cur.close()

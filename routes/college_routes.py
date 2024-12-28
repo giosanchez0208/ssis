@@ -55,7 +55,7 @@ def delete_college():
         return jsonify({'success': 'College deleted successfully.'}), 200
     except pymysql.MySQLError as e:
         return jsonify({'error': str(e)}), 400
-
+    
 @college_bp.route('/<college_code>/info', methods=['GET'])
 def get_college_info(college_code):
     try:

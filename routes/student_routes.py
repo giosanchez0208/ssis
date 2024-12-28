@@ -67,9 +67,12 @@ def edit(id_num):
     if request.method == 'POST':
         try:
             form_data = request.form
-            update_student(id_num, form_data['firstName'], form_data['lastName'], form_data.get('course'), form_data['year'], form_data['gender'], form_data.get('profile_picture_id'))
+            gender = form_data['gender']
+            if gender == "Custom":
+                custom_gender = form_data.get('customGender')
+                gender = custom_gender if custom_gender else gender
+            update_student(id_num, form_data['firstName'], form_data['lastName'], form_data.get('course'), form_data['year'], gender, form_data.get('profile_picture_id'))
             return jsonify({"success": True, "message": "Student updated successfully"})
-        
         except Exception as e:
             return jsonify({"success": False, "message": f"Update failed: {str(e)}"})
 

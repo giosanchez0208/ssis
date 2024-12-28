@@ -17,11 +17,11 @@ cursor.execute("SELECT course_code FROM programs")
 courses = [row[0] for row in cursor.fetchall()]
 
 # Initialize faker with different locales
-locales = ['en_US', 'en_GB', 'en_CA', 'en_AU']  # Removed non-English locales
+locales = ['en_US', 'en_GB', 'en_CA', 'en_AU']  
 fakers = {locale: Faker(locale) for locale in locales}
 
 def generate_id():
-    prefix = "2024"  # Change this to your desired prefix
+    prefix = "2024"
     suffix = ''.join(random.choices('0123456789', k=4))
     return f"{prefix}-{suffix}"
 
