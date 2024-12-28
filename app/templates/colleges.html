@@ -1,247 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <!-- Fontawesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" rel="stylesheet">
-    <title>Manage Colleges</title>
-</head>
+{% block title %}Colleges{% endblock %}
 
-<body class="bg-gray">
-    <!-- ========== Main Data Table ========== -->
-    <div class="bg-gray p-5 mt-5">
-        <div class="row align-items-center">
-            <div class="col">
-                <h1>Manage <b>Colleges</b></h1>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create
-                    College</button>
-            </div>
-        </div>
-        <hr />
-        <table id="college_table" class="table table-striped" style="width:100%">
-            <thead>
-                <tr>
-                    <th>College Code</th>
-                    <th>College Name</th>
-                    <th class="button-column"></th> <!-- Info -->
-                    <th class="button-column"></th> <!-- Edit -->
-                    <th class="button-column"></th> <!-- Delete -->
-                </tr>
-            </thead>
-            <tbody>
-                {% for college in colleges %}
-                <tr>
-                    <td>{{ college.college_code }}</td>
-                    <td>{{ college.college_name }}</td>
-                    <td>
-                        <button class="btn btn-info btn-sm info-btn" data-bs-toggle="modal"
-                            data-bs-target="#infoModal" data-id="{{ college.college_code }}"
-                            data-name="{{ college.college_name }}">
-                            <i class="fas fa-solid fa-info p-1" style="color: white;"></i>
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal"
-                            data-bs-target="#editModal" data-id="{{ college.college_code }}"
-                            data-name="{{ college.college_name }}">
-                            <i class="fas fa-edit p-1"></i>
-                        </button>
-                    </td>
-                    <td>
-                        <button class="btn btn-danger btn-sm delete-btn" data-bs-toggle="modal"
-                            data-bs-target="#deleteModal" data-id="{{ college.college_code }}"
-                            data-name="{{ college.college_name }}">
-                            <i class="fas fa-trash p-1"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% block content %}
+<div class="row align-items-center">
+    <div class="col">
+        <h1>Manage <b>Colleges</b></h1>
     </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Create College</button>
+    </div>
+</div>
+<hr />
+<table id="college_table" class="table table-striped" style="width:100%">
+    <thead>
+        <tr>
+            <th>College Code</th>
+            <th>College Name</th>
+            <th class="button-column"></th> <!-- Info -->
+            <th class="button-column"></th> <!-- Edit -->
+            <th class="button-column"></th> <!-- Delete -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for college in colleges %}
+        <tr>
+            <td>{{ college.college_code }}</td>
+            <td>{{ college.college_name }}</td>
+            <td>
+                <button class="btn btn-info btn-sm info-btn" data-bs-toggle="modal" data-bs-target="#infoModal"
+                    data-id="{{ college.college_code }}" data-name="{{ college.college_name }}">
+                    <i class="fas fa-solid fa-info p-1" style="color: white;"></i>
+                </button>
+            </td>
+            <td>
+                <button class="btn btn-warning btn-sm edit-btn" data-bs-toggle="modal" data-bs-target="#editModal"
+                    data-id="{{ college.college_code }}" data-name="{{ college.college_name }}">
+                    <i class="fas fa-edit p-1"></i>
+                </button>
+            </td>
+            <td>
+                <button class="btn btn-danger btn-sm delete-btn" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                    data-id="{{ college.college_code }}" data-name="{{ college.college_name }}">
+                    <i class="fas fa-trash p-1"></i>
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
 
-    <!-- Create College Modal -->
-    <div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="staticBackdropLabel">Create College</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="createCollegeForm">
-                        <!-- College Code -->
-                        <div class="mb-3">
-                            <label for="collegeCode" class="form-label">College Code</label>
-                            <input type="text" name="collegeCode" class="form-control" id="collegeCode" required>
-                            <small id="collegeCodeWarning" class="text-danger" style="display:none;">College code
-                                already exists.</small>
-                        </div>
-                        <!-- College Name -->
-                        <div class="mb-3">
-                            <label for="collegeName" class="form-label">College Name</label>
-                            <input type="text" name="collegeName" class="form-control" id="collegeName" required>
-                        </div>
-                        <hr />
-                        <!-- Submit Button -->
-                        <div class="mb-3 text-end">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                    </form>
-                </div>
+{% block modals %}
+<!-- Create College Modal -->
+<div class="modal fade" id="createModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Create College</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createCollegeForm">
+                    <!-- College Code -->
+                    <div class="mb-3">
+                        <label for="collegeCode" class="form-label">College Code</label>
+                        <input type="text" name="collegeCode" class="form-control" id="collegeCode" required>
+                        <small id="collegeCodeWarning" class="text-danger" style="display:none;">College code already exists.</small>
+                    </div>
+                    <!-- College Name -->
+                    <div class="mb-3">
+                        <label for="collegeName" class="form-label">College Name</label>
+                        <input type="text" name="collegeName" class="form-control" id="collegeName" required>
+                    </div>
+                    <hr />
+                    <!-- Submit Button -->
+                    <div class="mb-3 text-end">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Edit College Modal -->
-    <div id="editModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit College</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editCollegeForm">
-                        <div class="mb-3">
-                            <label for="editCollegeCode" class="form-label">College Code</label>
-                            <input type="text" class="form-control bg-light" id="editCollegeCode" readonly>
-                            <small class="text-muted">College code cannot be modified</small>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editCollegeName" class="form-label">College Name</label>
-                            <input type="text" class="form-control" id="editCollegeName" required>
-                        </div>
-                        <input type="hidden" id="originalCollegeCode">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateCollegeBtn">Update</button>
-                </div>
+<!-- Edit College Modal -->
+<div id="editModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Edit College</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCollegeForm">
+                    <div class="mb-3">
+                        <label for="editCollegeCode" class="form-label">College Code</label>
+                        <input type="text" class="form-control bg-light" id="editCollegeCode" readonly>
+                        <small class="text-muted">College code cannot be modified</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCollegeName" class="form-label">College Name</label>
+                        <input type="text" class="form-control" id="editCollegeName" required>
+                    </div>
+                    <input type="hidden" id="originalCollegeCode">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateCollegeBtn">Update</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to <u>delete</u> the college<br>
-                        <strong><span id="collegeName"></span> (<span id="collegeId"></span>)</strong>?</p>
-                    <p class="text-danger mt-3">Deleting this college will remove all associated programs and unenroll
-                        all students enrolled in those programs.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-                </div>
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <u>delete</u> the college<br>
+                    <strong><span id="collegeName"></span> (<span id="collegeId"></span>)</strong>?</p>
+                <p class="text-danger mt-3">Deleting this college will remove all associated programs and unenroll all students
+                    enrolled in those programs.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Info College Modal -->
-    <div id="infoModal" class="modal fade" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="infoModalLabel">College Information</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <h5>College Code: <span id="infoCollegeCode"></span></h5>
-                            <h5>College Name: <span id="infoCollegeName"></span></h5>
-                            <h6 id="infoTotalStudents"></h6>
-                            <div id="infoCourses" class="mt-3"></div>
-                        </div>
-                        <div class="col-md-7">
-                            <canvas id="studentPieChart" class="mt-3"></canvas>
-                        </div>
+<!-- Info College Modal -->
+<div id="infoModal" class="modal fade" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="infoModalLabel">College Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <h5>College Code: <span id="infoCollegeCode"></span></h5>
+                        <h5>College Name: <span id="infoCollegeName"></span></h5>
+                        <h6 id="infoTotalStudents"></h6>
+                        <div id="infoCourses" class="mt-3"></div>
+                    </div>
+                    <div class="col-md-7">
+                        <canvas id="studentPieChart" class="mt-3"></canvas>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- ========== APPBAR ========== -->
-    <div class="bg-white d-flex align-items-center fixed-top shadow px-4" style="min-height: 56px; z-index: 5;">
-        <!-- nav -->
-        <div class="col d-flex align-items-center">
-            <!-- student icon -->
-            <div class="mx-2 nav__btn">
-                <a href="{{ url_for('student.list_students') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-person text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Students</span>
-                </a>
-            </div>
-            <!-- course icon -->
-            <div class="mx-2 nav__btn">
-                <a href="{{ url_for('program.list_programs') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-book text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Courses</span>
-                </a>
-            </div>
-            <!-- college icon -->
-            <div class="mx-2 nav__btn nav__btn-active">
-                <a href="{{ url_for('college.list_colleges') }}" class="btn d-flex align-items-center px-3">
-                    <i class="fa-solid fa-building-columns text-muted fs-4"></i>
-                    <span class="ms-2 text-muted d-none d-lg-block">Colleges</span>
-                </a>
-            </div>
-        </div>
-        <!-- menus -->
-        <div class="col d-flex align-items-center justify-content-end">
-            <!-- profile -->
-            <img src="#" alt="profile picture" class="rounded-circle me-1"
-                style="width:38px; height: 38px; object-fit: cover" />
-            <p class="m-0 py-2 px-2 d-none d-lg-block">GIO KIEFER SANCHEZ</p>
-        </div>
-        <!-- main menu -->
-        <div class="d-flex align-items-center justify-content-center p-1 mx-2 bg-gray rounded-circle"
-            style="width:38px; height:38px; object-fit: cover" id="mainMenu" data-bs-toggle="dropdown"
-            aria-expanded="false" type="button">
-            <i class="fa-solid fa-ellipsis"></i>
-        </div>
-        <!-- main menu dropdown -->
-        <ul class="dropdown-menu">
-            <li class="p-1 mx-2">
-                <h2>Menu</h2>
-            </li>
-            <li><a class="dropdown-item" href="{{ url_for('home') }}">Log out</a></li>
-        </ul>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/college.js') }}"></script>
-</body>
-
-</html>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/college.js') }}"></script>
+{% endblock %}

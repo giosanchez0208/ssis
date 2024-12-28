@@ -23,7 +23,7 @@ def list_programs():
 
     programs = fetch_programs()
     colleges = fetch_colleges()
-    return render_template('programs.html', programs=programs, colleges=colleges)
+    return render_template('programs.html', programs=programs, colleges=colleges, active_page='programs')
 
 @program_bp.route('/<string:course_code>', methods=['GET'])
 def get_program(course_code):

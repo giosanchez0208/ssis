@@ -5,7 +5,7 @@ from controllers.db_controller import (
     fetch_programs, 
     insert_college, 
     update_college as update_college_db,
-    delete_college as delete_college_db,  # Rename this import too
+    delete_college as delete_college_db,
     fetch_college_info
 )
 
@@ -15,7 +15,7 @@ college_bp = Blueprint('college', __name__, url_prefix='/colleges')
 def list_colleges():
     colleges = fetch_colleges()
     programs = fetch_programs()
-    return render_template('colleges.html', colleges=colleges, programs=programs)
+    return render_template('colleges.html', colleges=colleges, programs=programs, active_page='colleges')
 
 @college_bp.route('/create', methods=['POST'])
 def create_college():
